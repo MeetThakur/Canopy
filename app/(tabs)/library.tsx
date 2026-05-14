@@ -61,10 +61,10 @@ function GridCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
         transition={200}
       />
       <View style={styles.gridOverlay}>
-        <CategoryBadge type={item.type} />
         <Text style={styles.gridTitle} numberOfLines={2}>
           {item.title}
         </Text>
+        <CategoryBadge type={item.type} />
       </View>
     </TouchableOpacity>
   );
