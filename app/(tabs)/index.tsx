@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
 } from 'react-native';
@@ -13,29 +13,25 @@ import { StatsRow } from '../../components/home/StatsRow';
 import { ActivityFeed } from '../../components/home/ActivityFeed';
 import { MediaCard } from '../../components/media/MediaCard';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { AddMediaSheet } from '../../components/sheets/AddMediaSheet';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useStatsStore } from '../../stores/statsStore';
-import { BookOpen } from 'lucide-react-native';
 
 function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  if (hour < 21) return 'Good evening';
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  if (h < 21) return 'Good evening';
   return 'Good night';
-}
-
-function getInitials(name: string): string {
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
 export default function HomeScreen() {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   const router = useRouter();
-  const getItems = useLibraryStore((s) => s.getItems);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const allItems = useLibraryStore((s) => s.getItems());
   const { recalculateStats } = useStatsStore();
-
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -44,54 +40,38 @@ export default function HomeScreen() {
     setTimeout(() => setRefreshing(false), 800);
   }, [recalculateStats]);
 
-  const allItems = getItems();
   const inProgress = allItems.filter((i) => i.status === 'inprogress').slice(0, 10);
   const recentlyCompleted = allItems.filter((i) => i.status === 'completed').slice(0, 5);
-
-  const userName = 'You';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={theme.textSecondary}
-          />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.textSecondary} />}
       >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.greeting, { color: theme.textSecondary }]}>
-              {getGreeting()} 👋
-            </Text>
+            <Text style={[styles.greeting, { color: theme.textSecondary }]}>{getGreeting()} 👋</Text>
             <Text style={[styles.appName, { color: theme.textPrimary }]}>Kanopi</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity
-              style={[styles.iconBtn, { backgroundColor: theme.surface2 }]}
-              accessibilityLabel="Notifications"
-            >
+            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: theme.surface2 }]} accessibilityLabel="Notifications">
               <Bell size={20} color={theme.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.avatar, { backgroundColor: theme.accentBooks }]}
-              accessibilityLabel="Profile"
               onPress={() => router.push('/(tabs)/profile')}
+              accessibilityLabel="Profile"
             >
-              <Text style={styles.avatarText}>{getInitials(userName)}</Text>
+              <Text style={styles.avatarText}>YO</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Stats Row */}
-        <Text style={[styles.sectionLabel, { color: theme.textSecondary, paddingHorizontal: Spacing.md }]}>
-          Your Library
-        </Text>
+        {/* Stats */}
+        <Text style={[styles.sectionLabel, { color: theme.textSecondary, paddingHorizontal: Spacing.md }]}>Your Library</Text>
         <StatsRow />
 
         {/* In Progress */}
@@ -107,21 +87,16 @@ export default function HomeScreen() {
           {inProgress.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
               {inProgress.map((item) => (
-                <MediaCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => router.push(`/media/${item.id}`)}
-                  style={styles.cardItem}
-                />
+                <MediaCard key={item.id} item={item} onPress={() => router.push(`/media/${item.id}`)} style={styles.cardItem} />
               ))}
             </ScrollView>
           ) : (
             <View style={[styles.emptyInline, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <EmptyState
                 title="Nothing in progress"
-                description="Start tracking something you're currently reading, watching, or playing."
+                description="Start something you're currently reading, watching, or playing."
                 actionLabel="+ Add Item"
-                onAction={() => {}}
+                onAction={() => setSheetVisible(true)}
                 style={styles.emptyInlineContent}
               />
             </View>
@@ -139,18 +114,12 @@ export default function HomeScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
               {recentlyCompleted.map((item) => (
-                <MediaCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => router.push(`/media/${item.id}`)}
-                  style={styles.cardItem}
-                />
+                <MediaCard key={item.id} item={item} onPress={() => router.push(`/media/${item.id}`)} style={styles.cardItem} />
               ))}
             </ScrollView>
           </View>
         )}
 
-        {/* Activity Feed */}
         <View style={styles.section}>
           <ActivityFeed />
         </View>
@@ -159,11 +128,13 @@ export default function HomeScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.textPrimary }]}
-        onPress={() => {}}
+        onPress={() => setSheetVisible(true)}
         accessibilityLabel="Add new media item"
       >
         <Plus size={24} color={theme.background} />
       </TouchableOpacity>
+
+      <AddMediaSheet visible={sheetVisible} onClose={() => setSheetVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -172,80 +143,34 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { paddingBottom: 100 },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.lg,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: Spacing.lg,
   },
   headerLeft: { gap: 2 },
-  greeting: {
-    fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.bodySmall,
-  },
-  appName: {
-    fontFamily: Typography.fontFamily.heading,
-    fontSize: Typography.sizes.display,
-  },
+  greeting: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall },
+  appName: { fontFamily: Typography.fontFamily.heading, fontSize: Typography.sizes.display },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  iconBtn: {
-    width: 38, height: 38, borderRadius: 999,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  avatar: {
-    width: 38, height: 38, borderRadius: 999,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  avatarText: {
-    fontFamily: Typography.fontFamily.primaryBold,
-    fontSize: Typography.sizes.bodySmall,
-    color: '#FFF',
-  },
+  iconBtn: { width: 38, height: 38, borderRadius: 999, justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 38, height: 38, borderRadius: 999, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontFamily: Typography.fontFamily.primaryBold, fontSize: Typography.sizes.bodySmall, color: '#FFF' },
   section: { marginBottom: Spacing.lg },
   sectionLabel: {
-    fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: Spacing.sm,
+    fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.caption,
+    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing.sm,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.sm,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: Spacing.md, marginBottom: Spacing.sm,
   },
-  sectionTitle: {
-    fontFamily: Typography.fontFamily.primaryBold,
-    fontSize: Typography.sizes.h3,
-  },
-  seeAll: {
-    fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.bodySmall,
-  },
+  sectionTitle: { fontFamily: Typography.fontFamily.primaryBold, fontSize: Typography.sizes.h3 },
+  seeAll: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall },
   cardRow: { paddingHorizontal: Spacing.md, gap: Spacing.md },
   cardItem: {},
-  emptyInline: {
-    marginHorizontal: Spacing.md,
-    borderRadius: 16,
-    borderWidth: 1,
-    minHeight: 140,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
+  emptyInline: { marginHorizontal: Spacing.md, borderRadius: 16, borderWidth: 1, minHeight: 140, justifyContent: 'center', overflow: 'hidden' },
   emptyInlineContent: { flex: undefined, padding: Spacing.lg },
   fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56, height: 56, borderRadius: 999,
+    position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 999,
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 6,
   },
 });

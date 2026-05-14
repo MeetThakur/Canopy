@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { useColorScheme } from 'react-native';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -7,26 +9,6 @@ interface ThemeState {
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
 }
-
-// In a real app, we would persist this to MMKV, but for simplicity here we just use zustand memory first
-// Or actually we should persist it.
-import { MMKV } from 'react-native-mmkv';
-import { StateStorage, createJSONStorage, persist } from 'zustand/middleware';
-
-const storage = new MMKV({ id: 'theme-storage' });
-
-const zustandStorage: StateStorage = {
-  setItem: (name, value) => {
-    return storage.set(name, value);
-  },
-  getItem: (name) => {
-    const value = storage.getString(name);
-    return value ?? null;
-  },
-  removeItem: (name) => {
-    return storage.delete(name);
-  },
-};
 
 export const useThemeStore = create<ThemeState>()(
   persist(
@@ -36,7 +18,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'theme-storage',
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );

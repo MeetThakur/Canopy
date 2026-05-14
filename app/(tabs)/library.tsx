@@ -16,6 +16,7 @@ import { useLibraryStore } from '../../stores/libraryStore';
 import { MediaRow } from '../../components/media/MediaRow';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CategoryBadge } from '../../components/media/CategoryBadge';
+import { AddMediaSheet } from '../../components/sheets/AddMediaSheet';
 import { MediaType, Status, MediaItem } from '../../types/media';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -53,6 +54,7 @@ export default function LibraryScreen() {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   const router = useRouter();
+  const [sheetVisible, setSheetVisible] = useState(false);
   const allItems = useLibraryStore((s) => s.getItems());
 
   const [activeCategory, setActiveCategory] = useState<'all' | MediaType>('all');
@@ -91,10 +93,10 @@ export default function LibraryScreen() {
             <TouchableOpacity key={tab.value} onPress={() => setActiveCategory(tab.value)}
               style={[styles.tab, { borderBottomColor: active ? theme.textPrimary : 'transparent', borderBottomWidth: 2 }]}
               accessibilityLabel={`Filter by ${tab.label}`}>
-              <Text style={[styles.tabText, { color: active ? theme.textPrimary : theme.textTertiary,
-                fontFamily: active ? Typography.fontFamily.primarySemiBold : Typography.fontFamily.primary }]}>
-                {tab.label}
-              </Text>
+              <Text style={[styles.tabText, {
+                color: active ? theme.textPrimary : theme.textTertiary,
+                fontFamily: active ? Typography.fontFamily.primarySemiBold : Typography.fontFamily.primary,
+              }]}>{tab.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -114,7 +116,12 @@ export default function LibraryScreen() {
       </ScrollView>
 
       {filtered.length === 0 ? (
-        <EmptyState title="Nothing here yet" description="Add items to your library using the + button." actionLabel="+ Add Item" onAction={() => {}} />
+        <EmptyState
+          title="Nothing here yet"
+          description="Start building your library."
+          actionLabel="+ Add Item"
+          onAction={() => setSheetVisible(true)}
+        />
       ) : viewMode === 'list' ? (
         <FlashList
           data={filtered}
@@ -140,9 +147,15 @@ export default function LibraryScreen() {
         />
       )}
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: theme.textPrimary }]} onPress={() => {}} accessibilityLabel="Add new media item">
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: theme.textPrimary }]}
+        onPress={() => setSheetVisible(true)}
+        accessibilityLabel="Add new media item"
+      >
         <Plus size={24} color={theme.background} />
       </TouchableOpacity>
+
+      <AddMediaSheet visible={sheetVisible} onClose={() => setSheetVisible(false)} />
     </SafeAreaView>
   );
 }

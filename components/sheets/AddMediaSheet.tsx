@@ -1,9 +1,8 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  ScrollView, KeyboardAvoidingView, Platform, Alert,
+  ScrollView, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -51,10 +50,10 @@ const STATUSES: { value: Status; label: string }[] = [
 ];
 
 interface AddMediaSheetProps {
-  sheetRef: React.RefObject<BottomSheet>;
+  visible: boolean;
+  onClose: () => void;
   prefill?: Partial<FormData>;
   editId?: string;
-  onClose?: () => void;
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
@@ -75,7 +74,7 @@ const fieldStyles = StyleSheet.create({
   error: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.caption },
 });
 
-export function AddMediaSheet({ sheetRef, prefill, editId, onClose }: AddMediaSheetProps) {
+export function AddMediaSheet({ visible, onClose, prefill, editId }: AddMediaSheetProps) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   const { addItem, updateItem, getItemById } = useLibraryStore();
@@ -108,13 +107,6 @@ export function AddMediaSheet({ sheetRef, prefill, editId, onClose }: AddMediaSh
 
   const selectedType = watch('type');
 
-  const snapPoints = useMemo(() => ['85%'], []);
-
-  const renderBackdrop = useCallback(
-    (props: object) => <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />,
-    []
-  );
-
   const onSubmit = (data: FormData) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const now = new Date();
@@ -134,239 +126,243 @@ export function AddMediaSheet({ sheetRef, prefill, editId, onClose }: AddMediaSh
       };
       addItem(newItem);
     }
-    sheetRef.current?.close();
-    onClose?.();
+    onClose();
   };
 
   const inputStyle = [styles.input, { backgroundColor: theme.surface2, borderColor: theme.border, color: theme.textPrimary }];
 
   return (
-    <BottomSheet
-      ref={sheetRef}
-      index={-1}
-      snapPoints={snapPoints}
-      enablePanDownToClose
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: theme.surface }}
-      handleIndicatorStyle={{ backgroundColor: theme.border }}
-    >
-      <BottomSheetScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View style={styles.sheetHeader}>
-          <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>{editId ? 'Edit Item' : 'Add to Library'}</Text>
-          <TouchableOpacity onPress={() => sheetRef.current?.close()} accessibilityLabel="Close sheet">
-            <X size={22} color={theme.textSecondary} />
-          </TouchableOpacity>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={[styles.modalContainer, { backgroundColor: theme.surface }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Handle bar */}
+        <View style={styles.handleBar}>
+          <View style={[styles.handle, { backgroundColor: theme.border }]} />
         </View>
 
-        {/* Type picker */}
-        <Field label="Category">
-          <Controller
-            control={control}
-            name="type"
-            render={({ field: { value, onChange } }) => (
-              <View style={styles.segRow}>
-                {TYPES.map(({ value: v, label, Icon }) => (
-                  <TouchableOpacity
-                    key={v}
-                    onPress={() => onChange(v)}
-                    style={[styles.segBtn, { backgroundColor: value === v ? theme.textPrimary : theme.surface2 }]}
-                    accessibilityLabel={`Select category ${label}`}
-                  >
-                    <Icon size={14} color={value === v ? theme.background : theme.textTertiary} />
-                    <Text style={[styles.segText, { color: value === v ? theme.background : theme.textSecondary }]}>{label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          />
-        </Field>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.sheetHeader}>
+            <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>{editId ? 'Edit Item' : 'Add to Library'}</Text>
+            <TouchableOpacity onPress={onClose} accessibilityLabel="Close sheet">
+              <X size={22} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Title */}
-        <Field label="Title *" error={errors.title?.message}>
-          <Controller
-            control={control}
-            name="title"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <TextInput
-                style={inputStyle}
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                placeholder="Enter title"
-                placeholderTextColor={theme.textTertiary}
-                accessibilityLabel="Media title input"
-              />
-            )}
-          />
-        </Field>
+          {/* Type picker */}
+          <Field label="Category">
+            <Controller
+              control={control}
+              name="type"
+              render={({ field: { value, onChange } }) => (
+                <View style={styles.segRow}>
+                  {TYPES.map(({ value: v, label, Icon }) => (
+                    <TouchableOpacity
+                      key={v}
+                      onPress={() => onChange(v)}
+                      style={[styles.segBtn, { backgroundColor: value === v ? theme.textPrimary : theme.surface2 }]}
+                      accessibilityLabel={`Select category ${label}`}
+                    >
+                      <Icon size={14} color={value === v ? theme.background : theme.textTertiary} />
+                      <Text style={[styles.segText, { color: value === v ? theme.background : theme.textSecondary }]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            />
+          </Field>
 
-        {/* Subtitle */}
-        <Field label={selectedType === 'book' ? 'Author' : selectedType === 'movie' ? 'Director' : 'Studio / Developer'}>
-          <Controller
-            control={control}
-            name="subtitle"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <TextInput style={inputStyle} value={value} onChangeText={onChange} onBlur={onBlur}
-                placeholder="Enter author/director/studio" placeholderTextColor={theme.textTertiary} />
-            )}
-          />
-        </Field>
+          {/* Title */}
+          <Field label="Title *" error={errors.title?.message}>
+            <Controller
+              control={control}
+              name="title"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <TextInput
+                  style={inputStyle}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Enter title"
+                  placeholderTextColor={theme.textTertiary}
+                  accessibilityLabel="Media title input"
+                />
+              )}
+            />
+          </Field>
 
-        {/* Cover URL */}
-        <Field label="Cover Image URL">
-          <Controller
-            control={control}
-            name="coverUrl"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <TextInput style={inputStyle} value={value} onChangeText={onChange} onBlur={onBlur}
-                placeholder="https://…" placeholderTextColor={theme.textTertiary} autoCapitalize="none" />
-            )}
-          />
-        </Field>
+          {/* Subtitle */}
+          <Field label={selectedType === 'book' ? 'Author' : selectedType === 'movie' ? 'Director' : 'Studio / Developer'}>
+            <Controller
+              control={control}
+              name="subtitle"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <TextInput style={inputStyle} value={value} onChangeText={onChange} onBlur={onBlur}
+                  placeholder="Enter author/director/studio" placeholderTextColor={theme.textTertiary} />
+              )}
+            />
+          </Field>
 
-        {/* Status */}
-        <Field label="Status">
-          <Controller
-            control={control}
-            name="status"
-            render={({ field: { value, onChange } }) => (
-              <View style={styles.segRow}>
-                {STATUSES.map(({ value: v, label }) => (
-                  <TouchableOpacity key={v} onPress={() => onChange(v)}
-                    style={[styles.segBtn, { backgroundColor: value === v ? theme.textPrimary : theme.surface2, flex: 1 }]}
-                    accessibilityLabel={`Set status ${label}`}>
-                    <Text style={[styles.segText, { color: value === v ? theme.background : theme.textSecondary }]}>{label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          />
-        </Field>
+          {/* Cover URL */}
+          <Field label="Cover Image URL">
+            <Controller
+              control={control}
+              name="coverUrl"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <TextInput style={inputStyle} value={value} onChangeText={onChange} onBlur={onBlur}
+                  placeholder="https://…" placeholderTextColor={theme.textTertiary} autoCapitalize="none" />
+              )}
+            />
+          </Field>
 
-        {/* Rating */}
-        <Field label="Your Rating">
-          <Controller
-            control={control}
-            name="rating"
-            render={({ field: { value, onChange } }) => (
-              <StarRating rating={value} size={28} editable onRate={onChange} />
-            )}
-          />
-        </Field>
+          {/* Status */}
+          <Field label="Status">
+            <Controller
+              control={control}
+              name="status"
+              render={({ field: { value, onChange } }) => (
+                <View style={styles.segRow}>
+                  {STATUSES.map(({ value: v, label }) => (
+                    <TouchableOpacity key={v} onPress={() => onChange(v)}
+                      style={[styles.segBtn, { backgroundColor: value === v ? theme.textPrimary : theme.surface2, flex: 1 }]}
+                      accessibilityLabel={`Set status ${label}`}>
+                      <Text style={[styles.segText, { color: value === v ? theme.background : theme.textSecondary }]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            />
+          </Field>
 
-        {/* Year */}
-        <Field label="Year">
-          <Controller
-            control={control}
-            name="year"
-            render={({ field: { value, onChange } }) => (
-              <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
-                placeholder="e.g. 2024" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
-            )}
-          />
-        </Field>
+          {/* Rating */}
+          <Field label="Your Rating">
+            <Controller
+              control={control}
+              name="rating"
+              render={({ field: { value, onChange } }) => (
+                <StarRating rating={value} size={28} editable onRate={onChange} />
+              )}
+            />
+          </Field>
 
-        {/* Type-specific fields */}
-        {selectedType === 'book' && (
-          <>
-            <Field label="Total Pages">
-              <Controller control={control} name="pages"
-                render={({ field: { value, onChange } }) => (
-                  <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
-                    placeholder="e.g. 320" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
-                )} />
-            </Field>
-            <Field label="Pages Read">
-              <Controller control={control} name="pagesRead"
-                render={({ field: { value, onChange } }) => (
-                  <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
-                    placeholder="e.g. 150" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
-                )} />
-            </Field>
-          </>
-        )}
-        {selectedType === 'movie' && (
-          <Field label="Runtime (minutes)">
-            <Controller control={control} name="runtime"
+          {/* Year */}
+          <Field label="Year">
+            <Controller
+              control={control}
+              name="year"
               render={({ field: { value, onChange } }) => (
                 <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
-                  placeholder="e.g. 148" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
-              )} />
+                  placeholder="e.g. 2024" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
+              )}
+            />
           </Field>
-        )}
-        {selectedType === 'tv' && (
-          <>
-            <Field label="Seasons">
-              <Controller control={control} name="seasons"
-                render={({ field: { value, onChange } }) => (
-                  <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
-                    placeholder="e.g. 3" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
-                )} />
-            </Field>
-            <Field label="Episodes Watched">
-              <Controller control={control} name="episodesWatched"
-                render={({ field: { value, onChange } }) => (
-                  <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
-                    placeholder="e.g. 24" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
-                )} />
-            </Field>
-          </>
-        )}
-        {selectedType === 'game' && (
-          <>
-            <Field label="Platform">
-              <Controller control={control} name="platform"
-                render={({ field: { value, onChange } }) => (
-                  <TextInput style={inputStyle} value={value ?? ''} onChangeText={onChange}
-                    placeholder="e.g. PC, PS5, Switch" placeholderTextColor={theme.textTertiary} />
-                )} />
-            </Field>
-            <Field label="Hours Played">
-              <Controller control={control} name="hoursPlayed"
-                render={({ field: { value, onChange } }) => (
-                  <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
-                    placeholder="e.g. 45" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
-                )} />
-            </Field>
-          </>
-        )}
 
-        {/* Notes */}
-        <Field label="Notes">
-          <Controller
-            control={control}
-            name="notes"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <TextInput
-                style={[inputStyle, styles.notesInput]}
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                placeholder="Your thoughts…"
-                placeholderTextColor={theme.textTertiary}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                accessibilityLabel="Notes input"
-              />
-            )}
+          {/* Type-specific fields */}
+          {selectedType === 'book' && (
+            <>
+              <Field label="Total Pages">
+                <Controller control={control} name="pages"
+                  render={({ field: { value, onChange } }) => (
+                    <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
+                      placeholder="e.g. 320" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
+                  )} />
+              </Field>
+              <Field label="Pages Read">
+                <Controller control={control} name="pagesRead"
+                  render={({ field: { value, onChange } }) => (
+                    <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
+                      placeholder="e.g. 150" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
+                  )} />
+              </Field>
+            </>
+          )}
+          {selectedType === 'movie' && (
+            <Field label="Runtime (minutes)">
+              <Controller control={control} name="runtime"
+                render={({ field: { value, onChange } }) => (
+                  <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
+                    placeholder="e.g. 148" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
+                )} />
+            </Field>
+          )}
+          {selectedType === 'tv' && (
+            <>
+              <Field label="Seasons">
+                <Controller control={control} name="seasons"
+                  render={({ field: { value, onChange } }) => (
+                    <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
+                      placeholder="e.g. 3" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
+                  )} />
+              </Field>
+              <Field label="Episodes Watched">
+                <Controller control={control} name="episodesWatched"
+                  render={({ field: { value, onChange } }) => (
+                    <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
+                      placeholder="e.g. 24" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
+                  )} />
+              </Field>
+            </>
+          )}
+          {selectedType === 'game' && (
+            <>
+              <Field label="Platform">
+                <Controller control={control} name="platform"
+                  render={({ field: { value, onChange } }) => (
+                    <TextInput style={inputStyle} value={value ?? ''} onChangeText={onChange}
+                      placeholder="e.g. PC, PS5, Switch" placeholderTextColor={theme.textTertiary} />
+                  )} />
+              </Field>
+              <Field label="Hours Played">
+                <Controller control={control} name="hoursPlayed"
+                  render={({ field: { value, onChange } }) => (
+                    <TextInput style={inputStyle} value={value?.toString() ?? ''} onChangeText={(t) => onChange(t ? parseInt(t, 10) : undefined)}
+                      placeholder="e.g. 45" placeholderTextColor={theme.textTertiary} keyboardType="numeric" />
+                  )} />
+              </Field>
+            </>
+          )}
+
+          {/* Notes */}
+          <Field label="Notes">
+            <Controller
+              control={control}
+              name="notes"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <TextInput
+                  style={[inputStyle, styles.notesInput]}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Your thoughts…"
+                  placeholderTextColor={theme.textTertiary}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  accessibilityLabel="Notes input"
+                />
+              )}
+            />
+          </Field>
+
+          <Button
+            title={editId ? 'Save Changes' : 'Add to Library'}
+            onPress={handleSubmit(onSubmit)}
+            disabled={!isValid}
+            style={styles.submitBtn}
+            accessibilityLabel={editId ? 'Save changes' : 'Add to library'}
           />
-        </Field>
-
-        <Button
-          title={editId ? 'Save Changes' : 'Add to Library'}
-          onPress={handleSubmit(onSubmit)}
-          disabled={!isValid}
-          style={styles.submitBtn}
-          accessibilityLabel={editId ? 'Save changes' : 'Add to library'}
-        />
-      </BottomSheetScrollView>
-    </BottomSheet>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalContainer: { flex: 1 },
+  handleBar: { alignItems: 'center', paddingTop: 12, paddingBottom: 4 },
+  handle: { width: 36, height: 5, borderRadius: 3 },
   content: { padding: Spacing.md, gap: Spacing.lg, paddingBottom: 60 },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xs },
   sheetTitle: { fontFamily: Typography.fontFamily.primaryBold, fontSize: Typography.sizes.h2 },

@@ -5,14 +5,14 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Book, Film, Tv, Gamepad2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { MMKV } from 'react-native-mmkv';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../constants/colors';
 import { useTheme, useThemeStore } from '../hooks/useTheme';
 import { Typography } from '../constants/typography';
 import { BorderRadius, Spacing } from '../constants/spacing';
 
 const { width } = Dimensions.get('window');
-const storage = new MMKV({ id: 'app-storage' });
+
 
 const SLIDES = [
   {
@@ -111,8 +111,8 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const listRef = useRef<FlatList>(null);
 
-  const handleStart = () => {
-    storage.set('onboarding_complete', true);
+  const handleStart = async () => {
+    await AsyncStorage.setItem('onboarding_complete', 'true');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.replace('/(tabs)');
   };
