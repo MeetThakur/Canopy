@@ -32,7 +32,10 @@ function getActivityText(status: Status) {
 export function ActivityFeed() {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
-  const items = useLibraryStore((s) => s.getItems());
+  const itemsMap = useLibraryStore((s) => s.items);
+  const items = React.useMemo(() => {
+    return Object.values(itemsMap).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [itemsMap]);
   const recent = items.slice(0, 10);
 
   if (recent.length === 0) return null;

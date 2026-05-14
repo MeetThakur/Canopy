@@ -1,26 +1,47 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
-import { Colors } from '../../constants/colors';
-import { useTheme } from '../../hooks/useTheme';
-import { Typography } from '../../constants/typography';
-import { BorderRadius, Spacing } from '../../constants/spacing';
-import { useDiscoverStore } from '../../stores/discoverStore';
-import { MediaSearchResult } from '../../types/api';
-import { SkeletonLoader, MediaCardSkeleton } from '../../components/ui/SkeletonLoader';
-import { CategoryBadge } from '../../components/media/CategoryBadge';
-import { MediaType } from '../../types/media';
-import { Plus } from 'lucide-react-native';
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
+import { Colors } from "../../constants/colors";
+import { useTheme } from "../../hooks/useTheme";
+import { Typography } from "../../constants/typography";
+import { BorderRadius, Spacing } from "../../constants/spacing";
+import { useDiscoverStore } from "../../stores/discoverStore";
+import { MediaSearchResult } from "../../types/api";
+import {
+  SkeletonLoader,
+  MediaCardSkeleton,
+} from "../../components/ui/SkeletonLoader";
+import { CategoryBadge } from "../../components/media/CategoryBadge";
+import { MediaType } from "../../types/media";
+import { Plus } from "lucide-react-native";
+import { AddMediaSheet } from "../../components/sheets/AddMediaSheet";
 
-function DiscoverCard({ item }: { item: MediaSearchResult }) {
+import { useRouter } from "expo-router";
+
+function DiscoverCard({
+  item,
+  onPress,
+}: {
+  item: MediaSearchResult;
+  onPress: () => void;
+}) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
 
   return (
-    <TouchableOpacity style={styles.discoverCard} accessibilityLabel={`View ${item.title}`}>
+    <TouchableOpacity
+      style={styles.discoverCard}
+      accessibilityLabel={`View ${item.title}`}
+      onPress={onPress}
+    >
       <Image
         source={{ uri: item.coverUrl || undefined }}
         style={styles.discoverCover}
@@ -29,11 +50,15 @@ function DiscoverCard({ item }: { item: MediaSearchResult }) {
       />
       <View style={styles.discoverOverlay}>
         <CategoryBadge type={item.type as MediaType} />
-        <Text style={styles.discoverTitle} numberOfLines={2}>{item.title}</Text>
-        {item.year && (
-          <Text style={styles.discoverYear}>{item.year}</Text>
-        )}
-        <TouchableOpacity style={styles.addBtn} accessibilityLabel={`Add ${item.title} to library`}>
+        <Text style={styles.discoverTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+        {item.year && <Text style={styles.discoverYear}>{item.year}</Text>}
+        <TouchableOpacity
+          style={styles.addBtn}
+          accessibilityLabel={`Add ${item.title} to library`}
+          onPress={onPress}
+        >
           <Plus size={14} color="#FFF" />
           <Text style={styles.addBtnText}>Add</Text>
         </TouchableOpacity>
@@ -42,18 +67,41 @@ function DiscoverCard({ item }: { item: MediaSearchResult }) {
   );
 }
 
-function SectionRow({ title, items, loading }: { title: string; items: MediaSearchResult[]; loading: boolean }) {
+function SectionRow({
+  title,
+  items,
+  loading,
+  onItemPress,
+}: {
+  title: string;
+  items: MediaSearchResult[];
+  loading: boolean;
+  onItemPress: (item: MediaSearchResult) => void;
+}) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
 
   return (
     <View style={styles.sectionContainer}>
-      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{title}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+        {title}
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+      >
         {loading
-          ? Array.from({ length: 4 }).map((_, i) => <MediaCardSkeleton key={i} />)
-          : items.map((item) => <DiscoverCard key={item.id} item={item} />)
-        }
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <MediaCardSkeleton key={i} />
+            ))
+          : items.map((item) => (
+              <DiscoverCard
+                key={item.id}
+                item={item}
+                onPress={() => onItemPress(item)}
+              />
+            ))}
       </ScrollView>
     </View>
   );
@@ -62,6 +110,7 @@ function SectionRow({ title, items, loading }: { title: string; items: MediaSear
 export default function DiscoverScreen() {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
+  const router = useRouter();
   const { movies, books, games, loading, fetchTrending } = useDiscoverStore();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -75,25 +124,61 @@ export default function DiscoverScreen() {
     setRefreshing(false);
   };
 
+  const handleItemPress = (item: MediaSearchResult) => {
+    router.push({
+      pathname: "/media/preview",
+      params: {
+        id: item.id,
+        sourceId: item.sourceId || "",
+        type: item.type,
+        title: item.title,
+        subtitle: item.subtitle || "",
+        coverUrl: item.coverUrl || "",
+        year: item.year || "",
+      },
+    });
+  };
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.textSecondary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.textSecondary}
+          />
         }
       >
         <View style={styles.headerRow}>
-          <Text style={[styles.pageTitle, { color: theme.textPrimary }]}>Discover</Text>
+          <Text style={[styles.pageTitle, { color: theme.textPrimary }]}>
+            Discover
+          </Text>
           <Text style={[styles.pageSubtitle, { color: theme.textSecondary }]}>
             What's trending this week
           </Text>
         </View>
 
-        <SectionRow title="🎬 Trending Movies & TV" items={movies.slice(0, 10)} loading={loading} />
-        <SectionRow title="📚 Popular Books" items={books.slice(0, 10)} loading={loading} />
-        <SectionRow title="🎮 Top Rated Games" items={games.slice(0, 10)} loading={loading} />
+        <SectionRow
+          title="🎬 Trending Movies & TV"
+          items={movies.slice(0, 10)}
+          loading={loading}
+          onItemPress={handleItemPress}
+        />
+        <SectionRow
+          title="📚 Popular Books"
+          items={books.slice(0, 10)}
+          loading={loading}
+          onItemPress={handleItemPress}
+        />
+        <SectionRow
+          title="🎮 Top Rated Games"
+          items={games.slice(0, 10)}
+          loading={loading}
+          onItemPress={handleItemPress}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -131,45 +216,45 @@ const styles = StyleSheet.create({
     width: 140,
     height: 220,
     borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   discoverCover: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#2E2C2A',
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#2E2C2A",
   },
   discoverOverlay: {
     ...StyleSheet.absoluteFillObject,
-    background: 'transparent',
-    justifyContent: 'flex-end',
+    background: "transparent",
+    justifyContent: "flex-end",
     padding: Spacing.sm,
     gap: Spacing.xs,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
   discoverTitle: {
     fontFamily: Typography.fontFamily.primaryBold,
     fontSize: Typography.sizes.bodySmall,
-    color: '#FFF',
+    color: "#FFF",
   },
   discoverYear: {
     fontFamily: Typography.fontFamily.primary,
     fontSize: Typography.sizes.caption,
-    color: 'rgba(255,255,255,0.7)',
+    color: "rgba(255,255,255,0.7)",
   },
   addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: "rgba(255,255,255,0.25)",
     borderRadius: BorderRadius.full,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginTop: 2,
   },
   addBtnText: {
     fontFamily: Typography.fontFamily.primarySemiBold,
     fontSize: Typography.sizes.caption,
-    color: '#FFF',
+    color: "#FFF",
   },
 });

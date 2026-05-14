@@ -1,10 +1,9 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, TouchableOpacity, StyleSheet, StyleProp, ViewStyle, Animated } from 'react-native';
 import { Star } from 'lucide-react-native';
 import { Colors } from '../../constants/colors';
 import { useTheme } from '../../hooks/useTheme';
 import { Spacing } from '../../constants/spacing';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 interface StarRatingProps {
   rating: number;
@@ -14,8 +13,6 @@ interface StarRatingProps {
   editable?: boolean;
   style?: StyleProp<ViewStyle>;
 }
-
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 function AnimatedStar({
   filled,
@@ -34,24 +31,32 @@ function AnimatedStar({
   onPress: () => void;
   editable: boolean;
 }) {
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(filled || half ? 1.0 : 0.9) }],
-  }));
+  const scale = useRef(new Animated.Value(filled || half ? 1.0 : 0.9)).current;
+
+  useEffect(() => {
+    Animated.spring(scale, {
+      toValue: filled || half ? 1.0 : 0.9,
+      useNativeDriver: true,
+      tension: 200,
+      friction: 10,
+    }).start();
+  }, [filled, half]);
 
   return (
-    <AnimatedTouchable
+    <TouchableOpacity
       onPress={editable ? onPress : undefined}
       disabled={!editable}
-      style={animStyle}
       accessibilityLabel={`Rate ${filled ? 'filled' : 'empty'} star`}
     >
-      <Star
-        size={size}
-        color={filled || half ? color : inactiveColor}
-        fill={filled ? color : half ? color : 'transparent'}
-        strokeWidth={1.5}
-      />
-    </AnimatedTouchable>
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Star
+          size={size}
+          color={filled || half ? color : inactiveColor}
+          fill={filled ? color : half ? color : 'transparent'}
+          strokeWidth={1.5}
+        />
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 

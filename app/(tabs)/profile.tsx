@@ -36,7 +36,10 @@ export default function ProfileScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const router = useRouter();
   const { stats } = useStatsStore();
-  const allItems = useLibraryStore((s) => s.getItems());
+  const itemsMap = useLibraryStore((s) => s.items);
+  const allItems = React.useMemo(() => {
+    return Object.values(itemsMap).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [itemsMap]);
 
   const year = new Date().getFullYear();
   const thisYearItems = allItems.filter((i) => i.createdAt && new Date(i.createdAt).getFullYear() === year);
