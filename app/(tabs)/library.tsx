@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
-import { LayoutGrid, List, Plus, GripVertical } from "lucide-react-native";
+import { LayoutGrid, List, Plus } from "lucide-react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Colors } from "../../constants/colors";
@@ -23,7 +23,6 @@ import { MediaRow } from "../../components/media/MediaRow";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { CategoryBadge } from "../../components/media/CategoryBadge";
 import { AddMediaSheet } from "../../components/sheets/AddMediaSheet";
-import { DraggableList } from "../../components/media/DraggableList";
 import { MediaType, Status, MediaItem } from "../../types/media";
 
 if (
@@ -74,9 +73,7 @@ export default function LibraryScreen() {
 
   const itemsMap = useLibraryStore((s) => s.items);
   const order = useLibraryStore((s) => s.order);
-  const reorderItems = useLibraryStore((s) => s.reorderItems);
 
-  // Build ordered list from persisted order
   const orderedItems = useMemo(() => {
     const listed: MediaItem[] = [];
     const seen = new Set<string>();
@@ -92,9 +89,6 @@ export default function LibraryScreen() {
   const [activeCategory, setActiveCategory] = useState<"all" | MediaType>("all");
   const [activeStatus, setActiveStatus] = useState<"all" | Status>("all");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [reorderMode, setReorderMode] = useState(false);
-
-  const isFiltered = activeCategory !== "all" || activeStatus !== "all";
 
   const filtered = useMemo(
     () => orderedItems.filter((item) => {
@@ -108,25 +102,7 @@ export default function LibraryScreen() {
   const toggleView = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setViewMode((v) => (v === "list" ? "grid" : "list"));
-    if (reorderMode) setReorderMode(false);
   };
-
-  // Called by DraggableList when user finishes drag — rebuild full order
-  const handleReorder = useCallback(
-    (newFilteredData: MediaItem[]) => {
-      const draggedIds = new Set(newFilteredData.map((i) => i.id));
-      const newDraggedIds = newFilteredData.map((i) => i.id);
-      const currentOrder = [...order];
-      // Find the positions in the full order where filtered items sit
-      const positions: number[] = [];
-      currentOrder.forEach((id, idx) => { if (draggedIds.has(id)) positions.push(idx); });
-      // Slot the new order into those positions
-      const newFullOrder = [...currentOrder];
-      positions.forEach((pos, i) => { newFullOrder[pos] = newDraggedIds[i]; });
-      reorderItems(newFullOrder);
-    },
-    [order, reorderItems]
-  );
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -138,106 +114,75 @@ export default function LibraryScreen() {
             {orderedItems.length} {orderedItems.length === 1 ? "item" : "items"}
           </Text>
         </View>
-        <View style={styles.headerActions}>
-          {viewMode === "list" && !isFiltered && (
-            <TouchableOpacity
-              onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setReorderMode((r) => !r);
-              }}
-              style={[
-                styles.iconBtn,
-                {
-                  backgroundColor: reorderMode ? theme.accent + "20" : theme.surface2,
-                  borderWidth: 1,
-                  borderColor: reorderMode ? theme.accent : "transparent",
-                },
-              ]}
-              accessibilityLabel="Toggle reorder mode"
-            >
-              <GripVertical size={18} color={reorderMode ? theme.accent : theme.textSecondary} />
-            </TouchableOpacity>
+        <TouchableOpacity
+          onPress={toggleView}
+          style={[styles.iconBtn, { backgroundColor: theme.surface2 }]}
+          accessibilityLabel="Toggle view mode"
+        >
+          {viewMode === "list" ? (
+            <LayoutGrid size={18} color={theme.textPrimary} />
+          ) : (
+            <List size={18} color={theme.textPrimary} />
           )}
-          <TouchableOpacity
-            onPress={toggleView}
-            style={[styles.iconBtn, { backgroundColor: theme.surface2 }]}
-            accessibilityLabel="Toggle view mode"
-          >
-            {viewMode === "list" ? (
-              <LayoutGrid size={18} color={theme.textPrimary} />
-            ) : (
-              <List size={18} color={theme.textPrimary} />
-            )}
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Category tabs */}
-      <View style={{ flexGrow: 0 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
-          {CATEGORY_TABS.map((tab) => {
-            const active = activeCategory === tab.value;
-            return (
-              <TouchableOpacity
-                key={tab.value}
-                onPress={() => { setActiveCategory(tab.value); if (reorderMode) setReorderMode(false); }}
-                style={[styles.tab, { borderBottomColor: active ? theme.accent : "transparent", borderBottomWidth: 2 }]}
-                accessibilityLabel={`Filter by ${tab.label}`}
-              >
-                <Text style={[styles.tabText, { color: active ? theme.accent : theme.textTertiary, fontFamily: active ? Typography.fontFamily.primarySemiBold : Typography.fontFamily.primary }]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
+        {CATEGORY_TABS.map((tab) => {
+          const active = activeCategory === tab.value;
+          return (
+            <TouchableOpacity
+              key={tab.value}
+              onPress={() => setActiveCategory(tab.value)}
+              style={[styles.tab, { borderBottomColor: active ? theme.accent : "transparent", borderBottomWidth: 2 }]}
+              accessibilityLabel={`Filter by ${tab.label}`}
+            >
+              <Text style={[styles.tabText, { color: active ? theme.accent : theme.textTertiary, fontFamily: active ? Typography.fontFamily.primarySemiBold : Typography.fontFamily.primary }]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       {/* Status pills */}
-      <View style={{ flexGrow: 0 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
-          {STATUS_FILTERS.map((f) => {
-            const active = activeStatus === f.value;
-            return (
-              <TouchableOpacity
-                key={f.value}
-                onPress={() => { setActiveStatus(f.value); if (reorderMode) setReorderMode(false); }}
-                style={[styles.pill, { backgroundColor: active ? theme.textPrimary : theme.surface2 }]}
-                accessibilityLabel={`Filter by ${f.label}`}
-              >
-                <Text style={[styles.pillText, { color: active ? theme.background : theme.textSecondary }]}>
-                  {f.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Reorder hint */}
-      {reorderMode && (
-        <View style={[styles.reorderHint, { backgroundColor: theme.accent + "12" }]}>
-          <Text style={[styles.reorderHintText, { color: theme.accent }]}>
-            Drag the handle to reorder items
-          </Text>
-        </View>
-      )}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
+        {STATUS_FILTERS.map((f) => {
+          const active = activeStatus === f.value;
+          return (
+            <TouchableOpacity
+              key={f.value}
+              onPress={() => setActiveStatus(f.value)}
+              style={[styles.pill, { backgroundColor: active ? theme.textPrimary : theme.surface2 }]}
+              accessibilityLabel={`Filter by ${f.label}`}
+            >
+              <Text style={[styles.pillText, { color: active ? theme.background : theme.textSecondary }]}>
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       {/* Content */}
       {filtered.length === 0 ? (
-        <EmptyState title="Nothing here yet" description="Start building your library." actionLabel="Add Item" onAction={() => setSheetVisible(true)} />
-      ) : viewMode === "list" && reorderMode ? (
-        <DraggableList
-          data={filtered}
-          onReorder={handleReorder}
-          onPress={(item) => router.push(`/media/${item.id}`)}
+        <EmptyState
+          title="Nothing here yet"
+          description="Start building your library."
+          actionLabel="Add Item"
+          onAction={() => setSheetVisible(true)}
         />
       ) : viewMode === "list" ? (
         <FlashList
           data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <MediaRow item={item} onPress={() => router.push(`/media/${item.id}`)} style={{ paddingHorizontal: Spacing.md }} />
+            <MediaRow
+              item={item}
+              onPress={() => router.push(`/media/${item.id}`)}
+              style={{ paddingHorizontal: Spacing.md }}
+            />
           )}
           estimatedItemSize={88}
           contentContainerStyle={{ paddingBottom: 80 }}
@@ -278,7 +223,6 @@ const styles = StyleSheet.create({
   },
   pageTitle: { fontFamily: Typography.fontFamily.heading, fontSize: Typography.sizes.display },
   itemCount: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall, marginTop: 2 },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   iconBtn: { width: 36, height: 36, borderRadius: 10, justifyContent: "center", alignItems: "center" },
   tabsRow: { paddingHorizontal: Spacing.md, gap: Spacing.lg, paddingBottom: Spacing.xs },
   tab: { paddingVertical: Spacing.sm },
@@ -286,11 +230,6 @@ const styles = StyleSheet.create({
   pillRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingVertical: Spacing.sm },
   pill: { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full },
   pillText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall },
-  reorderHint: {
-    marginHorizontal: Spacing.md, marginBottom: Spacing.xs,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: BorderRadius.sm,
-  },
-  reorderHintText: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall },
   gridCard: { marginBottom: Spacing.sm },
   gridCoverContainer: {
     height: 150, width: "100%", borderRadius: BorderRadius.md,
