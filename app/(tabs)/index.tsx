@@ -149,7 +149,7 @@ export default function HomeScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.carouselRow}
               decelerationRate="fast"
-              snapToInterval={SCREEN_W * 0.75 + Spacing.md}
+              snapToInterval={150 + Spacing.md}
               snapToAlignment="start"
             >
               {inProgress.map((item) => (
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   // Carousel (In Progress)
   carouselRow: { paddingHorizontal: Spacing.md, gap: Spacing.md },
   carouselCard: {
-    width: SCREEN_W * 0.75,
+    width: 150,
   },
   carouselCoverWrap: {
     width: '100%',
@@ -238,18 +238,18 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     overflow: 'hidden',
     backgroundColor: '#1C1C2E',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   carouselCover: { width: '100%', height: '100%' },
-  carouselMeta: { paddingHorizontal: 4 },
+  carouselMeta: { paddingHorizontal: 2 },
   carouselTitle: {
     fontFamily: Typography.fontFamily.primaryBold,
-    fontSize: Typography.sizes.h2,
-    marginBottom: 4,
+    fontSize: Typography.sizes.body,
+    marginBottom: 2,
   },
   carouselSubtitle: {
     fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.body,
+    fontSize: Typography.sizes.bodySmall,
   },
 
   // Empty state

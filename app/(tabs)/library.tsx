@@ -105,11 +105,8 @@ export default function LibraryScreen() {
       {/* Huge Header */}
       <View style={styles.headerRow}>
         <View style={styles.headerTextWrap}>
-          <Text style={[styles.countHuge, { color: theme.textPrimary }]}>
-            {orderedItems.length}
-          </Text>
           <Text style={[styles.pageTitleHuge, { color: theme.textPrimary }]}>
-            Items
+            My Library
           </Text>
         </View>
         <TouchableOpacity
