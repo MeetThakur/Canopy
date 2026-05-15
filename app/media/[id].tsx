@@ -41,11 +41,14 @@ function InfoRow({ label, value }: { label: string; value: string | number }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   return (
-    <View style={infoStyles.row}>
+    <View style={infoStyles.box}>
       <Text style={[infoStyles.label, { color: theme.textTertiary }]}>
         {label}
       </Text>
-      <Text style={[infoStyles.value, { color: theme.textPrimary }]}>
+      <Text
+        style={[infoStyles.value, { color: theme.textPrimary }]}
+        numberOfLines={1}
+      >
         {value}
       </Text>
     </View>
@@ -53,20 +56,20 @@ function InfoRow({ label, value }: { label: string; value: string | number }) {
 }
 
 const infoStyles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
+  box: {
+    width: "47%",
+    marginBottom: Spacing.md,
   },
   label: {
     fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.bodySmall,
+    fontSize: Typography.sizes.caption,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   value: {
     fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.bodySmall,
-    maxWidth: "60%",
-    textAlign: "right",
+    fontSize: Typography.sizes.body,
   },
 });
 
@@ -75,11 +78,9 @@ export default function MediaDetailScreen() {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   const router = useRouter();
-  const getItemById = useLibraryStore((s) => s.getItemById);
+  const item = useLibraryStore((s) => s.items[id as string]);
   const updateItem = useLibraryStore((s) => s.updateItem);
   const removeItem = useLibraryStore((s) => s.removeItem);
-
-  const item = getItemById(id);
 
   if (!item) {
     return (
@@ -171,12 +172,12 @@ export default function MediaDetailScreen() {
           source={{ uri: item.coverUrl || undefined }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
-          blurRadius={20}
+          blurRadius={10}
         />
         <View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: "rgba(0,0,0,0.55)" },
+            { backgroundColor: "rgba(0,0,0,0.7)" },
           ]}
         />
         <TouchableOpacity
@@ -191,20 +192,24 @@ export default function MediaDetailScreen() {
             source={{ uri: item.coverUrl || undefined }}
             style={styles.cover}
             contentFit="cover"
-            transition={200}
+            transition={0}
           />
           <View style={styles.heroMeta}>
-            <CategoryBadge type={item.type} />
             <Text style={styles.heroTitle} numberOfLines={3}>
               {item.title}
             </Text>
-            <Text style={styles.heroSubtitle} numberOfLines={1}>
-              {item.subtitle}
-            </Text>
-            {item.year && <Text style={styles.heroYear}>{item.year}</Text>}
+            {item.subtitle ? (
+              <Text style={styles.heroSubtitle} numberOfLines={2}>
+                {item.subtitle}
+              </Text>
+            ) : null}
+            <View style={styles.badgeRow}>
+              <CategoryBadge type={item.type} />
+              {item.year && <Text style={styles.heroYear}>{item.year}</Text>}
+            </View>
             <StarRating
               rating={item.rating}
-              size={18}
+              size={20}
               onRate={handleRate}
               editable
             />
@@ -261,64 +266,65 @@ export default function MediaDetailScreen() {
 
         {/* Details */}
         {item.description ? (
-          <Card style={[styles.card, { borderColor: theme.border }]}>
+          <View style={styles.cleanSection}>
             <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
-              Description
+              Synopsis
             </Text>
             <Text style={[styles.notes, { color: theme.textPrimary }]}>
               {item.description}
             </Text>
-          </Card>
+          </View>
         ) : null}
 
-        <Card style={[styles.card, { borderColor: theme.border }]}>
+        <View style={styles.cleanSection}>
           <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
             Details
           </Text>
-          {item.genre?.length ? (
-            <InfoRow label="Genre" value={item.genre.slice(0, 2).join(", ")} />
-          ) : null}
-          {item.language ? (
-            <InfoRow label="Language" value={item.language} />
-          ) : null}
-          {typeSpecificFields().map(
-            (f) =>
-              f && (
-                <InfoRow
-                  key={f.label}
-                  label={f.label}
-                  value={f.value as string | number}
-                />
-              ),
-          )}
-          {item.startDate ? (
-            <InfoRow
-              label="Started"
-              value={format(new Date(item.startDate), "MMM d, yyyy")}
-            />
-          ) : null}
-          {item.endDate ? (
-            <InfoRow
-              label="Finished"
-              value={format(new Date(item.endDate), "MMM d, yyyy")}
-            />
-          ) : null}
-          <InfoRow
-            label="Added"
-            value={format(new Date(item.createdAt), "MMM d, yyyy")}
-          />
-        </Card>
+          <View style={styles.detailsGrid}>
+            {item.genre?.length ? (
+              <InfoRow
+                label="Genre"
+                value={item.genre.slice(0, 2).join(", ")}
+              />
+            ) : null}
+            {item.language ? (
+              <InfoRow label="Language" value={item.language} />
+            ) : null}
+            {typeSpecificFields().map(
+              (f) =>
+                f && (
+                  <InfoRow
+                    key={f.label}
+                    label={f.label}
+                    value={f.value as string | number}
+                  />
+                ),
+            )}
+            {item.startDate ? (
+              <InfoRow
+                label="Started"
+                value={format(new Date(item.startDate), "MMM d, yyyy")}
+              />
+            ) : null}
+            {item.endDate ? (
+              <InfoRow
+                label="Finished"
+                value={format(new Date(item.endDate), "MMM d, yyyy")}
+              />
+            ) : null}
+          </View>
+        </View>
 
         {/* Notes */}
         {item.notes ? (
-          <Card style={[styles.card, { borderColor: theme.border }]}>
+          <View style={styles.cleanSection}>
             <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
               Your Notes
             </Text>
             <Text style={[styles.notes, { color: theme.textPrimary }]}>
               {item.notes}
             </Text>
-          </Card>
+          </View>
         ) : null}
 
         {/* Delete */}
@@ -336,7 +342,7 @@ export default function MediaDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  hero: { height: 280, justifyContent: "flex-end" },
+  hero: { paddingTop: 80, paddingBottom: 20, justifyContent: "flex-end" },
   backBtn: {
     position: "absolute",
     top: Spacing.md,
@@ -348,36 +354,59 @@ const styles = StyleSheet.create({
   },
   heroContent: {
     flexDirection: "row",
-    gap: Spacing.md,
-    padding: Spacing.md,
-    alignItems: "flex-end",
+    gap: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    alignItems: "center",
   },
   cover: {
-    width: 100,
-    height: 150,
+    width: 110,
+    height: 165,
     borderRadius: BorderRadius.md,
     backgroundColor: "#2E2C2A",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
   },
-  heroMeta: { flex: 1, gap: Spacing.xs, paddingBottom: Spacing.xs },
+  heroMeta: {
+    flex: 1,
+    alignItems: "flex-start",
+    gap: Spacing.xs,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+    marginTop: 2,
+  },
   heroTitle: {
     fontFamily: Typography.fontFamily.heading,
     fontSize: Typography.sizes.h1,
     color: "#FFF",
-    lineHeight: 30,
+    lineHeight: 32,
   },
   heroSubtitle: {
-    fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.bodySmall,
-    color: "rgba(255,255,255,0.7)",
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: Typography.sizes.body,
+    color: "rgba(255,255,255,0.9)",
   },
   heroYear: {
-    fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.caption,
-    color: "rgba(255,255,255,0.5)",
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
+    color: "rgba(255,255,255,0.8)",
   },
-  scroll: { padding: Spacing.md, gap: Spacing.md, paddingBottom: 80 },
-  section: { gap: Spacing.sm },
-  card: { borderWidth: 1, padding: Spacing.md, gap: Spacing.xs },
+  scroll: { padding: Spacing.lg, gap: Spacing.xl, paddingBottom: 100 },
+  section: { gap: Spacing.md },
+  cleanSection: { gap: Spacing.sm },
+  detailsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: Spacing.sm,
+  },
   sectionTitle: {
     fontFamily: Typography.fontFamily.primarySemiBold,
     fontSize: Typography.sizes.caption,

@@ -55,12 +55,12 @@ export default function MediaPreviewScreen() {
           source={{ uri: itemInfo.coverUrl || undefined }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
-          blurRadius={20}
+          blurRadius={10}
         />
         <View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: "rgba(0,0,0,0.55)" },
+            { backgroundColor: "rgba(0,0,0,0.7)" },
           ]}
         />
         <TouchableOpacity
@@ -75,10 +75,9 @@ export default function MediaPreviewScreen() {
             source={{ uri: itemInfo.coverUrl || undefined }}
             style={styles.cover}
             contentFit="cover"
-            transition={200}
+            transition={0}
           />
           <View style={styles.heroMeta}>
-            <CategoryBadge type={itemInfo.type as MediaType} />
             <Text style={styles.heroTitle} numberOfLines={3}>
               {itemInfo.title}
             </Text>
@@ -87,12 +86,12 @@ export default function MediaPreviewScreen() {
                 {itemInfo.subtitle}
               </Text>
             ) : null}
-            {itemInfo.year ? (
-              <Text style={styles.heroYear}>{itemInfo.year}</Text>
-            ) : null}
-            {itemInfo.genre && itemInfo.genre.length > 0 ? (
-              <Text style={styles.heroYear}>{itemInfo.genre.join(", ")}</Text>
-            ) : null}
+            <View style={styles.badgeRow}>
+              <CategoryBadge type={itemInfo.type as MediaType} />
+              {itemInfo.year ? (
+                <Text style={styles.heroYear}>{itemInfo.year}</Text>
+              ) : null}
+            </View>
           </View>
         </View>
       </View>
@@ -102,50 +101,90 @@ export default function MediaPreviewScreen() {
         showsVerticalScrollIndicator={false}
       >
         {itemInfo.description ? (
-          <Text style={[styles.descriptionText, { color: theme.textPrimary }]}>
-            {itemInfo.description}
-          </Text>
+          <View style={styles.cleanSection}>
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+              Synopsis
+            </Text>
+            <Text
+              style={[styles.descriptionText, { color: theme.textPrimary }]}
+            >
+              {itemInfo.description}
+            </Text>
+          </View>
         ) : null}
 
-        <View style={styles.detailsBox}>
-          {itemInfo.pages ? (
-            <Text style={[styles.detailItem, { color: theme.textSecondary }]}>
-              Pages:{" "}
-              <Text style={{ color: theme.textPrimary }}>{itemInfo.pages}</Text>
-            </Text>
-          ) : null}
-          {itemInfo.runtime ? (
-            <Text style={[styles.detailItem, { color: theme.textSecondary }]}>
-              Runtime:{" "}
-              <Text style={{ color: theme.textPrimary }}>
-                {itemInfo.runtime} min
-              </Text>
-            </Text>
-          ) : null}
-          {itemInfo.seasons ? (
-            <Text style={[styles.detailItem, { color: theme.textSecondary }]}>
-              Seasons:{" "}
-              <Text style={{ color: theme.textPrimary }}>
-                {itemInfo.seasons}
-              </Text>
-            </Text>
-          ) : null}
-          {itemInfo.platform ? (
-            <Text style={[styles.detailItem, { color: theme.textSecondary }]}>
-              Platforms:{" "}
-              <Text style={{ color: theme.textPrimary }}>
-                {itemInfo.platform}
-              </Text>
-            </Text>
-          ) : null}
-          {itemInfo.language ? (
-            <Text style={[styles.detailItem, { color: theme.textSecondary }]}>
-              Language:{" "}
-              <Text style={{ color: theme.textPrimary }}>
-                {itemInfo.language}
-              </Text>
-            </Text>
-          ) : null}
+        <View style={styles.cleanSection}>
+          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+            Details
+          </Text>
+          <View style={styles.detailsGrid}>
+            {itemInfo.genre && itemInfo.genre.length > 0 ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Genre
+                </Text>
+                <Text
+                  style={[styles.infoValue, { color: theme.textPrimary }]}
+                  numberOfLines={1}
+                >
+                  {itemInfo.genre.slice(0, 2).join(", ")}
+                </Text>
+              </View>
+            ) : null}
+            {itemInfo.pages ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Pages
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
+                  {itemInfo.pages}
+                </Text>
+              </View>
+            ) : null}
+            {itemInfo.runtime ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Runtime
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
+                  {itemInfo.runtime} min
+                </Text>
+              </View>
+            ) : null}
+            {itemInfo.seasons ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Seasons
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
+                  {itemInfo.seasons}
+                </Text>
+              </View>
+            ) : null}
+            {itemInfo.platform ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Platforms
+                </Text>
+                <Text
+                  style={[styles.infoValue, { color: theme.textPrimary }]}
+                  numberOfLines={1}
+                >
+                  {itemInfo.platform}
+                </Text>
+              </View>
+            ) : null}
+            {itemInfo.language ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Language
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
+                  {itemInfo.language}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         </View>
 
         <Text style={[styles.infoText, { color: theme.textSecondary }]}>
@@ -158,7 +197,7 @@ export default function MediaPreviewScreen() {
           onPress={() => setAddSheetVisible(true)}
         >
           <Plus size={20} color="#FFF" />
-          <Text style={[styles.addBtnText, { color: '#FFF' }]}>
+          <Text style={[styles.addBtnText, { color: "#FFF" }]}>
             Add to Library
           </Text>
         </TouchableOpacity>
@@ -195,7 +234,7 @@ export default function MediaPreviewScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  hero: { height: 320, justifyContent: "flex-end" },
+  hero: { paddingTop: 80, paddingBottom: 20, justifyContent: "flex-end" },
   backBtn: {
     position: "absolute",
     top: Spacing.md,
@@ -207,41 +246,83 @@ const styles = StyleSheet.create({
   },
   heroContent: {
     flexDirection: "row",
-    gap: Spacing.md,
-    padding: Spacing.md,
-    alignItems: "flex-end",
+    gap: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    alignItems: "center",
   },
   cover: {
-    width: 120,
-    height: 180,
+    width: 110,
+    height: 165,
     borderRadius: BorderRadius.md,
     backgroundColor: "#2E2C2A",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
   },
   heroMeta: {
     flex: 1,
+    alignItems: "flex-start",
     gap: Spacing.xs,
-    paddingBottom: Spacing.xs,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+    marginTop: 2,
   },
   heroTitle: {
     fontFamily: Typography.fontFamily.heading,
     fontSize: Typography.sizes.h1,
     color: "#FFF",
-    lineHeight: 30,
+    lineHeight: 32,
   },
   heroSubtitle: {
-    fontFamily: Typography.fontFamily.primary,
+    fontFamily: Typography.fontFamily.primaryMedium,
     fontSize: Typography.sizes.body,
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(255,255,255,0.9)",
   },
   heroYear: {
-    fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.caption,
-    color: "rgba(255,255,255,0.5)",
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
+    color: "rgba(255,255,255,0.8)",
   },
   scroll: {
-    padding: Spacing.xl,
+    padding: Spacing.lg,
     gap: Spacing.xl,
-    alignItems: "center",
+    paddingBottom: 100,
+  },
+  cleanSection: { gap: Spacing.sm, width: "100%" },
+  sectionTitle: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.caption,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: Spacing.xs,
+  },
+  detailsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: Spacing.sm,
+  },
+  infoBox: {
+    width: "47%",
+    marginBottom: Spacing.md,
+  },
+  infoLabel: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.caption,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.body,
   },
   infoText: {
     fontFamily: Typography.fontFamily.primary,

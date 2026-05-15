@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,15 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X, Book, Film, Tv, Gamepad2 } from "lucide-react-native";
+import {
+  X,
+  Book,
+  Film,
+  Tv,
+  Gamepad2,
+  Search,
+  Edit3,
+} from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Colors } from "../../constants/colors";
 import { useTheme } from "../../hooks/useTheme";
@@ -23,6 +31,7 @@ import { useLibraryStore } from "../../stores/libraryStore";
 import { MediaItem, MediaType, Status } from "../../types/media";
 import { StarRating } from "../ui/StarRating";
 import { Button } from "../ui/Button";
+import { useRouter } from "expo-router";
 
 const baseSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -115,6 +124,19 @@ export function AddMediaSheet({
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   const { addItem, updateItem, getItemById } = useLibraryStore();
+  const router = useRouter();
+
+  const [step, setStep] = useState<"choose" | "form">("choose");
+
+  useEffect(() => {
+    if (visible) {
+      if (prefill || editId) {
+        setStep("form");
+      } else {
+        setStep("choose");
+      }
+    }
+  }, [visible, prefill, editId]);
 
   const existingItem = editId ? getItemById(editId) : undefined;
 
@@ -197,257 +219,271 @@ export function AddMediaSheet({
           <View style={[styles.handle, { backgroundColor: theme.border }]} />
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.sheetHeader}>
-            <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>
-              {editId ? "Edit Item" : "Add to Library"}
-            </Text>
+        {step === "choose" ? (
+          <View style={styles.chooseContent}>
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>
+                Add to Library
+              </Text>
+              <TouchableOpacity onPress={onClose} accessibilityLabel="Cancel">
+                <Text style={{ color: theme.accentBooks, fontSize: 16 }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
-              onPress={onClose}
-              accessibilityLabel="Close sheet"
+              style={[styles.chooseCard, { backgroundColor: theme.surface2 }]}
+              onPress={() => {
+                onClose();
+                router.push("/(tabs)/search");
+              }}
             >
-              <X size={22} color={theme.textSecondary} />
+              <View
+                style={[
+                  styles.chooseIconBox,
+                  { backgroundColor: theme.accentBooks },
+                ]}
+              >
+                <Search size={24} color="#FFF" />
+              </View>
+              <View style={styles.chooseTexts}>
+                <Text
+                  style={[styles.chooseTitle, { color: theme.textPrimary }]}
+                >
+                  Search the Web
+                </Text>
+                <Text
+                  style={[styles.chooseDesc, { color: theme.textSecondary }]}
+                >
+                  Find books, movies, TV shows, and games.
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.chooseCard, { backgroundColor: theme.surface2 }]}
+              onPress={() => setStep("form")}
+            >
+              <View
+                style={[
+                  styles.chooseIconBox,
+                  { backgroundColor: theme.textSecondary },
+                ]}
+              >
+                <Edit3 size={24} color="#FFF" />
+              </View>
+              <View style={styles.chooseTexts}>
+                <Text
+                  style={[styles.chooseTitle, { color: theme.textPrimary }]}
+                >
+                  Add Manually
+                </Text>
+                <Text
+                  style={[styles.chooseDesc, { color: theme.textSecondary }]}
+                >
+                  Enter all details by yourself.
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
-
-          {/* Type picker */}
-          <Field label="Category">
-            <Controller
-              control={control}
-              name="type"
-              render={({ field: { value, onChange } }) => (
-                <View style={styles.segRow}>
-                  {TYPES.map(({ value: v, label, Icon }) => (
-                    <TouchableOpacity
-                      key={v}
-                      onPress={() => onChange(v)}
-                      style={[
-                        styles.segBtn,
-                        {
-                          backgroundColor:
-                            value === v ? theme.textPrimary : theme.surface2,
-                        },
-                      ]}
-                      accessibilityLabel={`Select category ${label}`}
-                    >
-                      <Icon
-                        size={14}
-                        color={
-                          value === v ? theme.background : theme.textTertiary
-                        }
-                      />
-                      <Text
-                        style={[
-                          styles.segText,
-                          {
-                            color:
-                              value === v
-                                ? theme.background
-                                : theme.textSecondary,
-                          },
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            />
-          </Field>
-
-          {/* Title */}
-          <Field label="Title *" error={errors.title?.message}>
-            <Controller
-              control={control}
-              name="title"
-              render={({ field: { value, onChange, onBlur } }) => (
-                <TextInput
-                  style={inputStyle}
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Enter title"
-                  placeholderTextColor={theme.textTertiary}
-                  accessibilityLabel="Media title input"
-                />
-              )}
-            />
-          </Field>
-
-          {/* Subtitle */}
-          <Field
-            label={
-              selectedType === "book"
-                ? "Author"
-                : selectedType === "movie"
-                  ? "Director"
-                  : "Studio / Developer"
-            }
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Controller
-              control={control}
-              name="subtitle"
-              render={({ field: { value, onChange, onBlur } }) => (
-                <TextInput
-                  style={inputStyle}
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Enter author/director/studio"
-                  placeholderTextColor={theme.textTertiary}
-                />
-              )}
-            />
-          </Field>
+            {/* Header */}
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>
+                {editId ? "Edit Item" : "Add to Library"}
+              </Text>
+              <TouchableOpacity
+                onPress={onClose}
+                accessibilityLabel="Close sheet"
+              >
+                <X size={22} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-          {/* Cover URL */}
-          <Field label="Cover Image URL">
-            <Controller
-              control={control}
-              name="coverUrl"
-              render={({ field: { value, onChange, onBlur } }) => (
-                <TextInput
-                  style={inputStyle}
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="https://…"
-                  placeholderTextColor={theme.textTertiary}
-                  autoCapitalize="none"
-                />
-              )}
-            />
-          </Field>
-
-          {/* Status */}
-          <Field label="Status">
-            <Controller
-              control={control}
-              name="status"
-              render={({ field: { value, onChange } }) => (
-                <View style={styles.segRow}>
-                  {STATUSES.map(({ value: v, label }) => (
-                    <TouchableOpacity
-                      key={v}
-                      onPress={() => onChange(v)}
-                      style={[
-                        styles.segBtn,
-                        {
-                          backgroundColor:
-                            value === v ? theme.textPrimary : theme.surface2,
-                          flex: 1,
-                        },
-                      ]}
-                      accessibilityLabel={`Set status ${label}`}
-                    >
-                      <Text
-                        style={[
-                          styles.segText,
-                          {
-                            color:
+            {/* Type picker - Only shown when adding manually without prefill */}
+            {!prefill && !editId && (
+              <Field label="Category">
+                <Controller
+                  control={control}
+                  name="type"
+                  render={({ field: { value, onChange } }) => (
+                    <View style={styles.segRow}>
+                      {TYPES.map(({ value: v, label, Icon }) => (
+                        <TouchableOpacity
+                          key={v}
+                          onPress={() => onChange(v)}
+                          style={[
+                            styles.segBtn,
+                            {
+                              backgroundColor:
+                                value === v
+                                  ? theme.textPrimary
+                                  : theme.surface2,
+                            },
+                          ]}
+                          accessibilityLabel={`Select category ${label}`}
+                        >
+                          <Icon
+                            size={14}
+                            color={
                               value === v
                                 ? theme.background
-                                : theme.textSecondary,
-                          },
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            />
-          </Field>
-
-          {/* Rating */}
-          <Field label="Your Rating">
-            <Controller
-              control={control}
-              name="rating"
-              render={({ field: { value, onChange } }) => (
-                <StarRating
-                  rating={value}
-                  size={28}
-                  editable
-                  onRate={onChange}
-                />
-              )}
-            />
-          </Field>
-
-          {/* Year */}
-          <Field label="Year">
-            <Controller
-              control={control}
-              name="year"
-              render={({ field: { value, onChange } }) => (
-                <TextInput
-                  style={inputStyle}
-                  value={value?.toString() ?? ""}
-                  onChangeText={(t) =>
-                    onChange(t ? parseInt(t, 10) : undefined)
-                  }
-                  placeholder="e.g. 2024"
-                  placeholderTextColor={theme.textTertiary}
-                  keyboardType="numeric"
-                />
-              )}
-            />
-          </Field>
-
-          {/* Type-specific fields */}
-          {selectedType === "book" && (
-            <>
-              <Field label="Total Pages">
-                <Controller
-                  control={control}
-                  name="pages"
-                  render={({ field: { value, onChange } }) => (
-                    <TextInput
-                      style={inputStyle}
-                      value={value?.toString() ?? ""}
-                      onChangeText={(t) =>
-                        onChange(t ? parseInt(t, 10) : undefined)
-                      }
-                      placeholder="e.g. 320"
-                      placeholderTextColor={theme.textTertiary}
-                      keyboardType="numeric"
-                    />
+                                : theme.textTertiary
+                            }
+                          />
+                          <Text
+                            style={[
+                              styles.segText,
+                              {
+                                color:
+                                  value === v
+                                    ? theme.background
+                                    : theme.textSecondary,
+                              },
+                            ]}
+                          >
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   )}
                 />
               </Field>
-              <Field label="Pages Read">
-                <Controller
-                  control={control}
-                  name="pagesRead"
-                  render={({ field: { value, onChange } }) => (
-                    <TextInput
-                      style={inputStyle}
-                      value={value?.toString() ?? ""}
-                      onChangeText={(t) =>
-                        onChange(t ? parseInt(t, 10) : undefined)
-                      }
-                      placeholder="e.g. 150"
-                      placeholderTextColor={theme.textTertiary}
-                      keyboardType="numeric"
-                    />
-                  )}
-                />
-              </Field>
-            </>
-          )}
-          {selectedType === "movie" && (
-            <Field label="Runtime (minutes)">
+            )}
+
+            {/* Title */}
+            <Field label="Title *" error={errors.title?.message}>
               <Controller
                 control={control}
-                name="runtime"
+                name="title"
+                render={({ field: { value, onChange, onBlur } }) => (
+                  <TextInput
+                    style={inputStyle}
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="Enter title"
+                    placeholderTextColor={theme.textTertiary}
+                    accessibilityLabel="Media title input"
+                  />
+                )}
+              />
+            </Field>
+
+            {/* Subtitle */}
+            <Field
+              label={
+                selectedType === "book"
+                  ? "Author"
+                  : selectedType === "movie"
+                    ? "Director"
+                    : "Studio / Developer"
+              }
+            >
+              <Controller
+                control={control}
+                name="subtitle"
+                render={({ field: { value, onChange, onBlur } }) => (
+                  <TextInput
+                    style={inputStyle}
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="Enter author/director/studio"
+                    placeholderTextColor={theme.textTertiary}
+                  />
+                )}
+              />
+            </Field>
+
+            {/* Cover URL */}
+            <Field label="Cover Image URL">
+              <Controller
+                control={control}
+                name="coverUrl"
+                render={({ field: { value, onChange, onBlur } }) => (
+                  <TextInput
+                    style={inputStyle}
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="https://…"
+                    placeholderTextColor={theme.textTertiary}
+                    autoCapitalize="none"
+                  />
+                )}
+              />
+            </Field>
+
+            {/* Status */}
+            <Field label="Status">
+              <Controller
+                control={control}
+                name="status"
+                render={({ field: { value, onChange } }) => (
+                  <View style={styles.segRow}>
+                    {STATUSES.map(({ value: v, label }) => (
+                      <TouchableOpacity
+                        key={v}
+                        onPress={() => onChange(v)}
+                        style={[
+                          styles.segBtn,
+                          {
+                            backgroundColor:
+                              value === v ? theme.textPrimary : theme.surface2,
+                            flex: 1,
+                          },
+                        ]}
+                        accessibilityLabel={`Set status ${label}`}
+                      >
+                        <Text
+                          style={[
+                            styles.segText,
+                            {
+                              color:
+                                value === v
+                                  ? theme.background
+                                  : theme.textSecondary,
+                            },
+                          ]}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              />
+            </Field>
+
+            {/* Rating */}
+            <Field label="Your Rating">
+              <Controller
+                control={control}
+                name="rating"
+                render={({ field: { value, onChange } }) => (
+                  <StarRating
+                    rating={value}
+                    size={28}
+                    editable
+                    onRate={onChange}
+                  />
+                )}
+              />
+            </Field>
+
+            {/* Year */}
+            <Field label="Year">
+              <Controller
+                control={control}
+                name="year"
                 render={({ field: { value, onChange } }) => (
                   <TextInput
                     style={inputStyle}
@@ -455,122 +491,184 @@ export function AddMediaSheet({
                     onChangeText={(t) =>
                       onChange(t ? parseInt(t, 10) : undefined)
                     }
-                    placeholder="e.g. 148"
+                    placeholder="e.g. 2024"
                     placeholderTextColor={theme.textTertiary}
                     keyboardType="numeric"
                   />
                 )}
               />
             </Field>
-          )}
-          {selectedType === "tv" && (
-            <>
-              <Field label="Seasons">
-                <Controller
-                  control={control}
-                  name="seasons"
-                  render={({ field: { value, onChange } }) => (
-                    <TextInput
-                      style={inputStyle}
-                      value={value?.toString() ?? ""}
-                      onChangeText={(t) =>
-                        onChange(t ? parseInt(t, 10) : undefined)
-                      }
-                      placeholder="e.g. 3"
-                      placeholderTextColor={theme.textTertiary}
-                      keyboardType="numeric"
-                    />
-                  )}
-                />
-              </Field>
-              <Field label="Episodes Watched">
-                <Controller
-                  control={control}
-                  name="episodesWatched"
-                  render={({ field: { value, onChange } }) => (
-                    <TextInput
-                      style={inputStyle}
-                      value={value?.toString() ?? ""}
-                      onChangeText={(t) =>
-                        onChange(t ? parseInt(t, 10) : undefined)
-                      }
-                      placeholder="e.g. 24"
-                      placeholderTextColor={theme.textTertiary}
-                      keyboardType="numeric"
-                    />
-                  )}
-                />
-              </Field>
-            </>
-          )}
-          {selectedType === "game" && (
-            <>
-              <Field label="Platform">
-                <Controller
-                  control={control}
-                  name="platform"
-                  render={({ field: { value, onChange } }) => (
-                    <TextInput
-                      style={inputStyle}
-                      value={value ?? ""}
-                      onChangeText={onChange}
-                      placeholder="e.g. PC, PS5, Switch"
-                      placeholderTextColor={theme.textTertiary}
-                    />
-                  )}
-                />
-              </Field>
-              <Field label="Hours Played">
-                <Controller
-                  control={control}
-                  name="hoursPlayed"
-                  render={({ field: { value, onChange } }) => (
-                    <TextInput
-                      style={inputStyle}
-                      value={value?.toString() ?? ""}
-                      onChangeText={(t) =>
-                        onChange(t ? parseInt(t, 10) : undefined)
-                      }
-                      placeholder="e.g. 45"
-                      placeholderTextColor={theme.textTertiary}
-                      keyboardType="numeric"
-                    />
-                  )}
-                />
-              </Field>
-            </>
-          )}
 
-          {/* Notes */}
-          <Field label="Notes">
-            <Controller
-              control={control}
-              name="notes"
-              render={({ field: { value, onChange, onBlur } }) => (
-                <TextInput
-                  style={[inputStyle, styles.notesInput]}
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Your thoughts…"
-                  placeholderTextColor={theme.textTertiary}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  accessibilityLabel="Notes input"
+            {/* Type-specific fields */}
+            {selectedType === "book" && (
+              <>
+                <Field label="Total Pages">
+                  <Controller
+                    control={control}
+                    name="pages"
+                    render={({ field: { value, onChange } }) => (
+                      <TextInput
+                        style={inputStyle}
+                        value={value?.toString() ?? ""}
+                        onChangeText={(t) =>
+                          onChange(t ? parseInt(t, 10) : undefined)
+                        }
+                        placeholder="e.g. 320"
+                        placeholderTextColor={theme.textTertiary}
+                        keyboardType="numeric"
+                      />
+                    )}
+                  />
+                </Field>
+                <Field label="Pages Read">
+                  <Controller
+                    control={control}
+                    name="pagesRead"
+                    render={({ field: { value, onChange } }) => (
+                      <TextInput
+                        style={inputStyle}
+                        value={value?.toString() ?? ""}
+                        onChangeText={(t) =>
+                          onChange(t ? parseInt(t, 10) : undefined)
+                        }
+                        placeholder="e.g. 150"
+                        placeholderTextColor={theme.textTertiary}
+                        keyboardType="numeric"
+                      />
+                    )}
+                  />
+                </Field>
+              </>
+            )}
+            {selectedType === "movie" && (
+              <Field label="Runtime (minutes)">
+                <Controller
+                  control={control}
+                  name="runtime"
+                  render={({ field: { value, onChange } }) => (
+                    <TextInput
+                      style={inputStyle}
+                      value={value?.toString() ?? ""}
+                      onChangeText={(t) =>
+                        onChange(t ? parseInt(t, 10) : undefined)
+                      }
+                      placeholder="e.g. 148"
+                      placeholderTextColor={theme.textTertiary}
+                      keyboardType="numeric"
+                    />
+                  )}
                 />
-              )}
+              </Field>
+            )}
+            {selectedType === "tv" && (
+              <>
+                <Field label="Seasons">
+                  <Controller
+                    control={control}
+                    name="seasons"
+                    render={({ field: { value, onChange } }) => (
+                      <TextInput
+                        style={inputStyle}
+                        value={value?.toString() ?? ""}
+                        onChangeText={(t) =>
+                          onChange(t ? parseInt(t, 10) : undefined)
+                        }
+                        placeholder="e.g. 3"
+                        placeholderTextColor={theme.textTertiary}
+                        keyboardType="numeric"
+                      />
+                    )}
+                  />
+                </Field>
+                <Field label="Episodes Watched">
+                  <Controller
+                    control={control}
+                    name="episodesWatched"
+                    render={({ field: { value, onChange } }) => (
+                      <TextInput
+                        style={inputStyle}
+                        value={value?.toString() ?? ""}
+                        onChangeText={(t) =>
+                          onChange(t ? parseInt(t, 10) : undefined)
+                        }
+                        placeholder="e.g. 24"
+                        placeholderTextColor={theme.textTertiary}
+                        keyboardType="numeric"
+                      />
+                    )}
+                  />
+                </Field>
+              </>
+            )}
+            {selectedType === "game" && (
+              <>
+                <Field label="Platform">
+                  <Controller
+                    control={control}
+                    name="platform"
+                    render={({ field: { value, onChange } }) => (
+                      <TextInput
+                        style={inputStyle}
+                        value={value ?? ""}
+                        onChangeText={onChange}
+                        placeholder="e.g. PC, PS5, Switch"
+                        placeholderTextColor={theme.textTertiary}
+                      />
+                    )}
+                  />
+                </Field>
+                <Field label="Hours Played">
+                  <Controller
+                    control={control}
+                    name="hoursPlayed"
+                    render={({ field: { value, onChange } }) => (
+                      <TextInput
+                        style={inputStyle}
+                        value={value?.toString() ?? ""}
+                        onChangeText={(t) =>
+                          onChange(t ? parseInt(t, 10) : undefined)
+                        }
+                        placeholder="e.g. 45"
+                        placeholderTextColor={theme.textTertiary}
+                        keyboardType="numeric"
+                      />
+                    )}
+                  />
+                </Field>
+              </>
+            )}
+
+            {/* Notes */}
+            <Field label="Notes">
+              <Controller
+                control={control}
+                name="notes"
+                render={({ field: { value, onChange, onBlur } }) => (
+                  <TextInput
+                    style={[inputStyle, styles.notesInput]}
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="Your thoughts…"
+                    placeholderTextColor={theme.textTertiary}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    accessibilityLabel="Notes input"
+                  />
+                )}
+              />
+            </Field>
+
+            <Button
+              title={editId ? "Save Changes" : "Add to Library"}
+              onPress={handleSubmit(onSubmit)}
+              disabled={!isValid}
+              style={styles.submitBtn}
+              accessibilityLabel={editId ? "Save changes" : "Add to library"}
             />
-          </Field>
-
-          <Button
-            title={editId ? "Save Changes" : "Add to Library"}
-            onPress={handleSubmit(onSubmit)}
-            disabled={!isValid}
-            style={styles.submitBtn}
-            accessibilityLabel={editId ? "Save changes" : "Add to library"}
-          />
-        </ScrollView>
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -615,4 +713,35 @@ const styles = StyleSheet.create({
   },
   notesInput: { height: 100 },
   submitBtn: { marginTop: Spacing.sm },
+  chooseContent: {
+    padding: Spacing.md,
+    gap: Spacing.md,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
+  },
+  chooseCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.md,
+  },
+  chooseIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chooseTexts: {
+    flex: 1,
+    gap: 4,
+  },
+  chooseTitle: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: 16,
+  },
+  chooseDesc: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: 13,
+  },
 });

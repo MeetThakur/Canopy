@@ -1,23 +1,21 @@
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Plus, ChevronRight, Play } from 'lucide-react-native';
-import { Image } from 'expo-image';
+import { Plus, ChevronRight } from 'lucide-react-native';
 import { Colors } from '../../constants/colors';
 import { useTheme } from '../../hooks/useTheme';
 import { Typography } from '../../constants/typography';
-import { Spacing, BorderRadius } from '../../constants/spacing';
+import { Spacing } from '../../constants/spacing';
+import { StatsRow } from '../../components/home/StatsRow';
 import { ActivityFeed } from '../../components/home/ActivityFeed';
 import { CoverCard } from '../../components/media/CoverCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { AddMediaSheet } from '../../components/sheets/AddMediaSheet';
 import { useLibraryStore } from '../../stores/libraryStore';
-import { CategoryBadge } from '../../components/media/CategoryBadge';
-
-const { width } = Dimensions.get('window');
+import { useStatsStore } from '../../stores/statsStore';
 
 export default function HomeScreen() {
   const { isDark } = useTheme();
@@ -30,16 +28,17 @@ export default function HomeScreen() {
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
   }, [itemsMap]);
+  const { recalculateStats } = useStatsStore();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    recalculateStats();
     setTimeout(() => setRefreshing(false), 800);
-  }, []);
+  }, [recalculateStats]);
 
-  const inProgress = allItems.filter((i) => i.status === 'inprogress');
-  const primaryItem = inProgress.length > 0 ? inProgress[0] : null;
-  const otherInProgress = inProgress.slice(1, 6);
+  const inProgress = allItems.filter((i) => i.status === 'inprogress').slice(0, 10);
+  const recentlyCompleted = allItems.filter((i) => i.status === 'completed').slice(0, 5);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -50,7 +49,7 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.textTertiary} />
         }
       >
-        {/* Minimal Header */}
+        {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.appName, { color: theme.textPrimary }]}>Kanopi</Text>
           <TouchableOpacity
@@ -62,70 +61,63 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Hero: Jump Back In */}
-        {primaryItem ? (
-          <View style={styles.heroSection}>
-            <Text style={[styles.sectionTitle, { color: theme.textTertiary, paddingHorizontal: Spacing.md }]}>
-              Jump Back In
-            </Text>
-            <TouchableOpacity 
-              style={styles.heroCard}
-              onPress={() => router.push(`/media/${primaryItem.id}`)}
-              activeOpacity={0.9}
-            >
-              <Image
-                source={{ uri: primaryItem.coverUrl || undefined }}
-                style={styles.heroCover}
-                contentFit="cover"
-              />
-              <View style={[styles.heroOverlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)' }]} />
-              
-              <View style={styles.heroContent}>
-                <View style={styles.heroTop}>
-                  <View style={styles.heroBadge}>
-                    <CategoryBadge type={primaryItem.type} size={14} />
-                  </View>
-                </View>
-                <View style={styles.heroBottom}>
-                  <Text style={styles.heroTitle} numberOfLines={2}>{primaryItem.title}</Text>
-                  {primaryItem.subtitle && (
-                    <Text style={styles.heroSubtitle} numberOfLines={1}>{primaryItem.subtitle}</Text>
-                  )}
-                  <View style={styles.heroAction}>
-                    <Text style={styles.heroActionText}>Continue</Text>
-                    <ChevronRight size={16} color="#FFF" />
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={[styles.emptyInline, { borderColor: theme.border, backgroundColor: theme.surface }]}>
-            <EmptyState
-              title="Your library awaits"
-              description="Start tracking the stories you're experiencing right now."
-              actionLabel="Add Item"
-              onAction={() => setSheetVisible(true)}
-              style={{ padding: Spacing.xl }}
-            />
-          </View>
-        )}
+        {/* Stats */}
+        <StatsRow />
 
-        {/* Up Next */}
-        {otherInProgress.length > 0 && (
+        {/* In Progress */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>In Progress</Text>
+            {inProgress.length > 0 && (
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/library')}
+                style={styles.seeAllBtn}
+              >
+                <Text style={[styles.seeAll, { color: theme.textTertiary }]}>All</Text>
+                <ChevronRight size={14} color={theme.textTertiary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          {inProgress.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
+              {inProgress.map((item) => (
+                <CoverCard key={item.id} item={item} onPress={() => router.push(`/media/${item.id}`)} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={[styles.emptyInline, { borderColor: theme.border }]}>
+              <EmptyState
+                title="Nothing in progress"
+                description="Start tracking something you're reading, watching, or playing."
+                actionLabel="Add Item"
+                onAction={() => setSheetVisible(true)}
+                style={styles.emptyInlineContent}
+              />
+            </View>
+          )}
+        </View>
+
+        {/* Recently Completed */}
+        {recentlyCompleted.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Up Next</Text>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Completed</Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/library')}
+                style={styles.seeAllBtn}
+              >
+                <Text style={[styles.seeAll, { color: theme.textTertiary }]}>All</Text>
+                <ChevronRight size={14} color={theme.textTertiary} />
+              </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
-              {otherInProgress.map((item) => (
+              {recentlyCompleted.map((item) => (
                 <CoverCard key={item.id} item={item} onPress={() => router.push(`/media/${item.id}`)} />
               ))}
             </ScrollView>
           </View>
         )}
 
-        {/* Recent Activity */}
         <View style={styles.section}>
           <ActivityFeed />
         </View>
@@ -148,77 +140,18 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 10,
     justifyContent: 'center', alignItems: 'center',
   },
-  heroSection: {
-    marginBottom: Spacing.xl,
-  },
-  heroCard: {
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.sm,
-    height: 220,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-  },
-  heroCover: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroContent: {
-    flex: 1,
-    padding: Spacing.md,
-    justifyContent: 'space-between',
-  },
-  heroTop: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  heroBadge: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 6,
-    borderRadius: 8,
-  },
-  heroBottom: {
-    gap: 4,
-  },
-  heroTitle: {
-    fontFamily: Typography.fontFamily.heading,
-    fontSize: 28,
-    color: '#FFF',
-    lineHeight: 32,
-  },
-  heroSubtitle: {
-    fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.body,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  heroAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    gap: 4,
-  },
-  heroActionText: {
-    fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.bodySmall,
-    color: '#FFF',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  section: { marginBottom: Spacing.xl },
+  section: { marginBottom: Spacing.lg },
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: Spacing.md, marginBottom: Spacing.sm,
   },
-  sectionTitle: { 
-    fontFamily: Typography.fontFamily.primarySemiBold, 
-    fontSize: Typography.sizes.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
+  sectionTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.h3 },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  seeAll: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall },
   cardRow: { paddingHorizontal: Spacing.md, gap: 12 },
   emptyInline: {
-    marginHorizontal: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1,
-    marginBottom: Spacing.xl, overflow: 'hidden',
+    marginHorizontal: Spacing.md, borderRadius: 12, borderWidth: 1,
+    minHeight: 120, justifyContent: 'center', overflow: 'hidden',
   },
+  emptyInlineContent: { flex: undefined, padding: Spacing.md },
 });
