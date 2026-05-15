@@ -55,7 +55,6 @@ export function MediaCard({ item, onPress, style }: MediaCardProps) {
             <CategoryBadge type={item.type} />
           </View>
           <View style={styles.footer}>
-            <StatusPill status={item.status} />
             {item.year && (
               <Text style={[styles.year, { color: theme.textTertiary }]}>
                 {item.year}
@@ -70,12 +69,12 @@ export function MediaCard({ item, onPress, style }: MediaCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 250,
-    height: 180,
+    width: 280,
+    height: 150,
     flexDirection: "row",
   },
   cover: {
-    width: 120,
+    width: 100,
     height: "100%",
     borderTopLeftRadius: BorderRadius.md,
     borderBottomLeftRadius: BorderRadius.md,
@@ -107,9 +106,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: Spacing.xs,
   },
   year: {
     fontFamily: Typography.fontFamily.primaryMedium,
     fontSize: Typography.sizes.caption,
+    flexShrink: 0,
   },
 });

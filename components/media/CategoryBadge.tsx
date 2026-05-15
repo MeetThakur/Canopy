@@ -1,45 +1,34 @@
-import React from 'react';
-import { Badge } from '../ui/Badge';
-import { MediaType } from '../../types/media';
-import { Colors } from '../../constants/colors';
-import { useTheme } from '../../hooks/useTheme';
-import { StyleProp, ViewStyle } from 'react-native';
+import React from "react";
+import { View, StyleProp, ViewStyle } from "react-native";
+import { Book, Film, Tv, Gamepad2 } from "lucide-react-native";
+import { MediaType } from "../../types/media";
+import { Colors } from "../../constants/colors";
+import { useTheme } from "../../hooks/useTheme";
 
 interface CategoryBadgeProps {
   type: MediaType;
   style?: StyleProp<ViewStyle>;
+  size?: number;
 }
 
-export function CategoryBadge({ type, style }: CategoryBadgeProps) {
+export function CategoryBadge({ type, style, size = 16 }: CategoryBadgeProps) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
 
-  const getCategoryLabel = () => {
+  const getIcon = () => {
     switch (type) {
-      case 'book': return 'Book';
-      case 'movie': return 'Movie';
-      case 'tv': return 'TV Show';
-      case 'game': return 'Game';
-      default: return '';
+      case "book":
+        return <Book size={size} color={theme.accentBooks} />;
+      case "movie":
+        return <Film size={size} color={theme.accentMovies} />;
+      case "tv":
+        return <Tv size={size} color={theme.accentTV} />;
+      case "game":
+        return <Gamepad2 size={size} color={theme.accentGames} />;
+      default:
+        return null;
     }
   };
 
-  const getCategoryColor = () => {
-    switch (type) {
-      case 'book': return theme.accentBooks;
-      case 'movie': return theme.accentMovies;
-      case 'tv': return theme.accentTV;
-      case 'game': return theme.accentGames;
-      default: return theme.surface2;
-    }
-  };
-
-  return (
-    <Badge
-      label={getCategoryLabel()}
-      color={getCategoryColor()}
-      textColor="#FFFFFF"
-      style={style}
-    />
-  );
+  return <View style={style}>{getIcon()}</View>;
 }

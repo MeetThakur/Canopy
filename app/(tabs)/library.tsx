@@ -48,23 +48,33 @@ const STATUS_FILTERS: { label: string; value: "all" | Status }[] = [
 ];
 
 function GridCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
+  const { isDark } = useTheme();
+  const theme = isDark ? Colors.dark : Colors.light;
+
   return (
     <TouchableOpacity
       style={styles.gridCard}
       onPress={onPress}
       accessibilityLabel={item.title}
     >
-      <Image
-        source={{ uri: item.coverUrl || undefined }}
-        style={styles.gridCover}
-        contentFit="cover"
-        transition={200}
-      />
-      <View style={styles.gridOverlay}>
-        <Text style={styles.gridTitle} numberOfLines={2}>
+      <View style={styles.gridCoverContainer}>
+        <Image
+          source={{ uri: item.coverUrl || undefined }}
+          style={styles.gridCover}
+          contentFit="cover"
+          transition={200}
+        />
+        <View style={styles.gridIconOverlay}>
+          <CategoryBadge type={item.type} size={14} />
+        </View>
+      </View>
+      <View style={styles.gridInfo}>
+        <Text
+          style={[styles.gridTitle, { color: theme.textPrimary }]}
+          numberOfLines={2}
+        >
           {item.title}
         </Text>
-        <CategoryBadge type={item.type} />
       </View>
     </TouchableOpacity>
   );
@@ -233,7 +243,7 @@ export default function LibraryScreen() {
         <FlashList
           data={filtered}
           keyExtractor={(item) => item.id}
-          numColumns={2}
+          numColumns={3}
           renderItem={({ item }) => (
             <View style={{ flex: 1, padding: Spacing.xs }}>
               <GridCard
@@ -242,7 +252,7 @@ export default function LibraryScreen() {
               />
             </View>
           )}
-          estimatedItemSize={200}
+          estimatedItemSize={160}
           contentContainerStyle={{
             paddingHorizontal: Spacing.sm,
             paddingBottom: 80,
@@ -314,23 +324,31 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.bodySmall,
   },
   gridCard: {
-    height: 200,
+    marginBottom: Spacing.sm,
+  },
+  gridCoverContainer: {
+    height: 150,
+    width: "100%",
     borderRadius: BorderRadius.md,
     overflow: "hidden",
     backgroundColor: "#2E2C2A",
+    marginBottom: Spacing.xs,
   },
   gridCover: { width: "100%", height: "100%" },
-  gridOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-end",
-    padding: Spacing.sm,
-    gap: Spacing.xs,
-    backgroundColor: "rgba(0,0,0,0.5)",
+  gridIconOverlay: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: BorderRadius.sm,
+    padding: 4,
+  },
+  gridInfo: {
+    paddingHorizontal: 2,
   },
   gridTitle: {
     fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.bodySmall,
-    color: "#FFF",
+    fontSize: 12,
   },
   fab: {
     position: "absolute",

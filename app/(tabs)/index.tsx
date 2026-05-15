@@ -16,7 +16,7 @@ import { Typography } from "../../constants/typography";
 import { Spacing } from "../../constants/spacing";
 import { StatsRow } from "../../components/home/StatsRow";
 import { ActivityFeed } from "../../components/home/ActivityFeed";
-import { MediaCard } from "../../components/media/MediaCard";
+import { CoverCard } from "../../components/media/CoverCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { AddMediaSheet } from "../../components/sheets/AddMediaSheet";
 import { useLibraryStore } from "../../stores/libraryStore";
@@ -119,11 +119,10 @@ export default function HomeScreen() {
               contentContainerStyle={styles.cardRow}
             >
               {inProgress.map((item) => (
-                <MediaCard
+                <CoverCard
                   key={item.id}
                   item={item}
                   onPress={() => router.push(`/media/${item.id}`)}
-                  style={styles.cardItem}
                 />
               ))}
             </ScrollView>
@@ -164,11 +163,10 @@ export default function HomeScreen() {
               contentContainerStyle={styles.cardRow}
             >
               {recentlyCompleted.map((item) => (
-                <MediaCard
+                <CoverCard
                   key={item.id}
                   item={item}
                   onPress={() => router.push(`/media/${item.id}`)}
-                  style={styles.cardItem}
                 />
               ))}
             </ScrollView>
