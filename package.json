@@ -14,6 +14,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@shopify/flash-list": "2.0.2",
+    "babel-preset-expo": "^55.0.21",
     "date-fns": "^4.1.0",
     "expo": "~54.0.33",
     "expo-blur": "~15.0.8",

@@ -66,10 +66,28 @@ const STATUSES: { value: Status; label: string }[] = [
   { value: "completed", label: "Completed" },
 ];
 
+interface RichPrefill extends Partial<FormData> {
+  genre?: string[];
+  language?: string;
+  releaseDate?: string;
+  director?: string;
+  cast?: string[];
+  tagline?: string;
+  budget?: number;
+  revenue?: number;
+  numberOfEpisodes?: number;
+  network?: string;
+  status_tv?: string;
+  developer?: string;
+  publisher_game?: string;
+  igdbRating?: number;
+  publisher?: string;
+}
+
 interface AddMediaSheetProps {
   visible: boolean;
   onClose: () => void;
-  prefill?: Partial<FormData>;
+  prefill?: RichPrefill;
   prefillSourceId?: string;
   editId?: string;
 }
@@ -186,13 +204,32 @@ export function AddMediaSheet({
         createdAt: now,
         updatedAt: now,
         sourceId: prefillSourceId || "",
+        // Shared rich fields
         genre: prefill?.genre || [],
         language: prefill?.language || "",
+        releaseDate: prefill?.releaseDate,
+        // Movie-specific
+        director: prefill?.director,
+        cast: prefill?.cast,
+        tagline: prefill?.tagline,
+        budget: prefill?.budget,
+        revenue: prefill?.revenue,
+        // TV-specific
+        numberOfEpisodes: prefill?.numberOfEpisodes,
+        network: prefill?.network,
+        status_tv: prefill?.status_tv,
+        // Game-specific
+        developer: prefill?.developer,
+        publisher_game: prefill?.publisher_game,
+        igdbRating: prefill?.igdbRating,
+        // Book-specific
+        publisher: prefill?.publisher,
       };
       addItem(newItem);
     }
     onClose();
   };
+
 
   const inputStyle = [
     styles.input,

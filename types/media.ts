@@ -16,18 +16,39 @@ export interface MediaItem {
   updatedAt: Date;
   sourceId: string; // API id for reference
 
-  // Type-specific fields (optional)
+  // Shared optional fields
   description?: string;
-  pages?: number;
-  pagesRead?: number;
-  runtime?: number;
-  seasons?: number;
-  episodesWatched?: number;
-  platform?: string;
-  hoursPlayed?: number;
   genre?: string[];
   year?: number;
   language?: string;
+  releaseDate?: string; // full date string e.g. "2023-09-22"
+
+  // Book-specific
+  pages?: number;
+  pagesRead?: number;
+  publisher?: string;
+
+  // Movie-specific
+  runtime?: number; // minutes
+  director?: string;
+  cast?: string[];
+  budget?: number;
+  revenue?: number;
+  tagline?: string;
+
+  // TV-specific
+  seasons?: number;
+  episodesWatched?: number;
+  numberOfEpisodes?: number;
+  network?: string;
+  status_tv?: string; // "Ended", "Returning Series", etc.
+
+  // Game-specific
+  platform?: string;
+  hoursPlayed?: number;
+  developer?: string;
+  publisher_game?: string;
+  igdbRating?: number;
 }
 
 export interface UserStats {

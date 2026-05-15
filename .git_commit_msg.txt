@@ -1,0 +1,12 @@
+feat: rich type-specific detail pages and drag-to-reorder library
+
+- Type-specific detail pages for book, movie, TV, game with director,
+  cast, genres, developer, publisher, network, runtime, release dates
+- Drag-and-drop reorder in library using pure React Native PanResponder
+  (no reanimated required, fully Expo Go compatible)
+- Enhanced IGDB API: developer, publisher, themes, storyline, igdbRating
+- Enhanced TMDB API: getMovieDetails/getTVDetails with director and cast
+- Fix babel.config.js: remove reanimated plugin (incompatible with Expo Go)
+- Move HARDCOVER_TOKEN from hardcoded to EXPO_PUBLIC_HARDCOVER_TOKEN in .env
+- Pass all rich API fields through AddMediaSheet prefill when saving
+- Extended MediaItem and MediaSearchResult types with richer fields

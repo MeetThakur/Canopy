@@ -1,32 +1,38 @@
-import React from 'react';
+import React from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { MediaItem } from '../../types/media';
-import { Colors } from '../../constants/colors';
-import { useTheme } from '../../hooks/useTheme';
-import { Typography } from '../../constants/typography';
-import { BorderRadius, Spacing } from '../../constants/spacing';
-import { CategoryBadge } from './CategoryBadge';
-import { StarRating } from '../ui/StarRating';
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
+import { Image } from "expo-image";
+import { MediaItem } from "../../types/media";
+import { Colors } from "../../constants/colors";
+import { useTheme } from "../../hooks/useTheme";
+import { Typography } from "../../constants/typography";
+import { BorderRadius, Spacing } from "../../constants/spacing";
+import { CategoryBadge } from "./CategoryBadge";
+import { StarRating } from "../ui/StarRating";
 
 interface MediaRowProps {
   item: MediaItem;
   onPress?: () => void;
+  onLongPress?: () => void;
   style?: StyleProp<ViewStyle>;
 }
 
-export function MediaRow({ item, onPress, style }: MediaRowProps) {
+export function MediaRow({ item, onPress, onLongPress, style }: MediaRowProps) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={!onPress}
+      onLongPress={onLongPress}
+      disabled={!onPress && !onLongPress}
       style={[styles.row, { borderBottomColor: theme.border }, style]}
-      accessibilityLabel={`${item.title} by ${item.subtitle}`}
     >
       <Image
         source={{ uri: item.coverUrl || undefined }}
@@ -36,18 +42,26 @@ export function MediaRow({ item, onPress, style }: MediaRowProps) {
       />
       <View style={styles.info}>
         <View style={styles.topRow}>
-          <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
+          <Text
+            style={[styles.title, { color: theme.textPrimary }]}
+            numberOfLines={1}
+          >
             {item.title}
           </Text>
           <CategoryBadge type={item.type} />
         </View>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
+        <Text
+          style={[styles.subtitle, { color: theme.textSecondary }]}
+          numberOfLines={1}
+        >
           {item.subtitle}
         </Text>
         <View style={styles.bottomRow}>
           <StarRating rating={item.rating} size={13} />
           {item.year && (
-            <Text style={[styles.year, { color: theme.textTertiary }]}>{item.year}</Text>
+            <Text style={[styles.year, { color: theme.textTertiary }]}>
+              {item.year}
+            </Text>
           )}
         </View>
       </View>
@@ -57,8 +71,8 @@ export function MediaRow({ item, onPress, style }: MediaRowProps) {
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: Spacing.md,
@@ -67,16 +81,16 @@ const styles = StyleSheet.create({
     width: 52,
     height: 72,
     borderRadius: BorderRadius.sm,
-    backgroundColor: '#2E2C2A',
+    backgroundColor: "#2E2C2A",
   },
   info: {
     flex: 1,
     gap: Spacing.xs,
   },
   topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: Spacing.sm,
   },
   title: {
@@ -89,9 +103,9 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.bodySmall,
   },
   bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   year: {
     fontFamily: Typography.fontFamily.primary,

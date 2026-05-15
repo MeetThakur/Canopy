@@ -207,9 +207,6 @@ export default function MediaPreviewScreen() {
         visible={addSheetVisible}
         onClose={() => {
           setAddSheetVisible(false);
-          // If the user adds the item, the store gets updated.
-          // They might want to go back or stay, usually closing the sheet is enough.
-          // In a more complex app, we might navigate them directly to the new item's detail page.
           router.back();
         }}
         prefillSourceId={itemInfo.sourceId}
@@ -226,6 +223,17 @@ export default function MediaPreviewScreen() {
           platform: itemInfo.platform,
           language: itemInfo.language,
           genre: itemInfo.genre,
+          releaseDate: itemInfo.releaseDate,
+          director: itemInfo.director,
+          cast: itemInfo.cast,
+          tagline: itemInfo.tagline,
+          numberOfEpisodes: itemInfo.numberOfEpisodes,
+          network: itemInfo.network,
+          status_tv: itemInfo.status_tv,
+          developer: itemInfo.developer,
+          publisher_game: itemInfo.publisher_game,
+          igdbRating: itemInfo.igdbRating,
+          publisher: itemInfo.publisher,
         }}
       />
     </SafeAreaView>
