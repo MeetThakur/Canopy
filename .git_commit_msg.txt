@@ -1,4 +1,7 @@
-style: adjust card sizes and library header
+style: complex editorial bento layout
 
-- Reduced homepage carousel card size to 150px width for better proportions
-- Removed the giant item count number from the Library screen, returning to a sleek 'My Library' title
+- Redesigned the homepage to feel less basic while maintaining the stark monochrome theme
+- Reintroduced the total items count but as a sleek inline typographic element ("35 Works in Collection")
+- Created a massive full-width Hero card with a fading gradient overlay and overlapping huge typography for the top item
+- Implemented an asymmetric 2-column masonry (bento) grid for upcoming items
+- Added a minimalist text-only list for recently added items to provide varied visual texture
