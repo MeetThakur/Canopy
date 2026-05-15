@@ -70,7 +70,7 @@ export function StarRating({
 }: StarRatingProps) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
-  const starColor = theme.accentBooks;
+  const starColor = theme.accent;
   const inactiveColor = theme.border;
 
   const handleRate = (index: number) => {

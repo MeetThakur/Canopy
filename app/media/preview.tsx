@@ -154,11 +154,11 @@ export default function MediaPreviewScreen() {
         </Text>
 
         <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: theme.textPrimary }]}
+          style={[styles.addBtn, { backgroundColor: theme.accent }]}
           onPress={() => setAddSheetVisible(true)}
         >
-          <Plus size={20} color={theme.background} />
-          <Text style={[styles.addBtnText, { color: theme.background }]}>
+          <Plus size={20} color="#FFF" />
+          <Text style={[styles.addBtnText, { color: '#FFF' }]}>
             Add to Library
           </Text>
         </TouchableOpacity>

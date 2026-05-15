@@ -30,22 +30,22 @@ export function Button({
   const getBackgroundColor = () => {
     if (disabled) return theme.surface2;
     switch (variant) {
-      case 'primary': return theme.textPrimary;
+      case 'primary': return theme.accent;
       case 'secondary': return theme.surface2;
       case 'outline': return 'transparent';
       case 'destructive': return theme.destructive;
-      default: return theme.textPrimary;
+      default: return theme.accent;
     }
   };
 
   const getTextColor = () => {
     if (disabled) return theme.textTertiary;
     switch (variant) {
-      case 'primary': return theme.background;
+      case 'primary': return '#FFFFFF';
       case 'secondary': return theme.textPrimary;
       case 'outline': return theme.textPrimary;
       case 'destructive': return '#FFFFFF';
-      default: return theme.background;
+      default: return '#FFFFFF';
     }
   };
 

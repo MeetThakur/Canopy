@@ -1,3 +1,7 @@
+// Kanopi Design System — Typography
+// DM Serif Display for the brand name only.
+// DM Sans for everything else — clean, geometric, modern.
+
 export const Typography = {
   fontFamily: {
     primary: 'DMSans_400Regular',
@@ -7,12 +11,13 @@ export const Typography = {
     heading: 'DMSerifDisplay_400Regular',
   },
   sizes: {
-    display: 32,
-    h1: 24,
-    h2: 20,
-    h3: 17,
-    body: 15,
+    display: 28,
+    h1: 22,
+    h2: 18,
+    h3: 16,
+    body: 14,
     bodySmall: 13,
     caption: 11,
+    micro: 10,
   },
 };

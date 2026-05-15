@@ -64,11 +64,11 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 key={value}
                 onPress={() => setThemeMode(value)}
-                style={[styles.themeBtn, { backgroundColor: themeMode === value ? theme.textPrimary : theme.surface2 }]}
+                style={[styles.themeBtn, { backgroundColor: themeMode === value ? theme.accent : theme.surface2 }]}
                 accessibilityLabel={`Set theme to ${label}`}
               >
-                <Icon size={16} color={themeMode === value ? theme.background : theme.textSecondary} />
-                <Text style={[styles.themeBtnText, { color: themeMode === value ? theme.background : theme.textSecondary }]}>{label}</Text>
+                <Icon size={16} color={themeMode === value ? '#FFF' : theme.textSecondary} />
+                <Text style={[styles.themeBtnText, { color: themeMode === value ? '#FFF' : theme.textSecondary }]}>{label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -83,7 +83,7 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>About</Text>
         <Card style={[styles.card, { borderColor: theme.border }]}>
           <SettingRow label="Kanopi v1.0.0" right={<Info size={18} color={theme.textTertiary} />} />
-          <SettingRow label='"Everything under one Kanopi"' />
+          <SettingRow label='Track what you love.' />
         </Card>
       </ScrollView>
     </SafeAreaView>

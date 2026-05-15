@@ -1,26 +1,23 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Bell, Plus } from "lucide-react-native";
-import { Colors } from "../../constants/colors";
-import { useTheme } from "../../hooks/useTheme";
-import { Typography } from "../../constants/typography";
-import { Spacing } from "../../constants/spacing";
-import { StatsRow } from "../../components/home/StatsRow";
-import { ActivityFeed } from "../../components/home/ActivityFeed";
-import { CoverCard } from "../../components/media/CoverCard";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { AddMediaSheet } from "../../components/sheets/AddMediaSheet";
-import { useLibraryStore } from "../../stores/libraryStore";
-import { useStatsStore } from "../../stores/statsStore";
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Plus, ChevronRight, Play } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { Colors } from '../../constants/colors';
+import { useTheme } from '../../hooks/useTheme';
+import { Typography } from '../../constants/typography';
+import { Spacing, BorderRadius } from '../../constants/spacing';
+import { ActivityFeed } from '../../components/home/ActivityFeed';
+import { CoverCard } from '../../components/media/CoverCard';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { AddMediaSheet } from '../../components/sheets/AddMediaSheet';
+import { useLibraryStore } from '../../stores/libraryStore';
+import { CategoryBadge } from '../../components/media/CategoryBadge';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { isDark } = useTheme();
@@ -30,25 +27,19 @@ export default function HomeScreen() {
   const itemsMap = useLibraryStore((s) => s.items);
   const allItems = React.useMemo(() => {
     return Object.values(itemsMap).sort(
-      (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
   }, [itemsMap]);
-  const { recalculateStats } = useStatsStore();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    recalculateStats();
     setTimeout(() => setRefreshing(false), 800);
-  }, [recalculateStats]);
+  }, []);
 
-  const inProgress = allItems
-    .filter((i) => i.status === "inprogress")
-    .slice(0, 10);
-  const recentlyCompleted = allItems
-    .filter((i) => i.status === "completed")
-    .slice(0, 5);
+  const inProgress = allItems.filter((i) => i.status === 'inprogress');
+  const primaryItem = inProgress.length > 0 ? inProgress[0] : null;
+  const otherInProgress = inProgress.slice(1, 6);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -56,141 +47,91 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={theme.textSecondary}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.textTertiary} />
         }
       >
-        {/* Header */}
+        {/* Minimal Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={[styles.appName, { color: theme.textPrimary }]}>
-              Kanopi
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              style={[styles.iconBtn, { backgroundColor: theme.surface2 }]}
-              accessibilityLabel="Notifications"
-            >
-              <Bell size={20} color={theme.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.avatar, { backgroundColor: theme.accentBooks }]}
-              onPress={() => router.push("/(tabs)/profile")}
-              accessibilityLabel="Profile"
-            >
-              <Text style={styles.avatarText}>YO</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={[styles.appName, { color: theme.textPrimary }]}>Kanopi</Text>
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: theme.accent }]}
+            onPress={() => setSheetVisible(true)}
+            accessibilityLabel="Add new item"
+          >
+            <Plus size={18} color="#FFF" strokeWidth={2.5} />
+          </TouchableOpacity>
         </View>
 
-        {/* Stats */}
-        <Text
-          style={[
-            styles.sectionLabel,
-            { color: theme.textSecondary, paddingHorizontal: Spacing.md },
-          ]}
-        >
-          Your Library
-        </Text>
-        <StatsRow />
-
-        {/* In Progress */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              In Progress
+        {/* Hero: Jump Back In */}
+        {primaryItem ? (
+          <View style={styles.heroSection}>
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary, paddingHorizontal: Spacing.md }]}>
+              Jump Back In
             </Text>
-            {inProgress.length > 0 && (
-              <TouchableOpacity onPress={() => router.push("/(tabs)/library")}>
-                <Text style={[styles.seeAll, { color: theme.accentMovies }]}>
-                  See all
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          {inProgress.length > 0 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.cardRow}
+            <TouchableOpacity 
+              style={styles.heroCard}
+              onPress={() => router.push(`/media/${primaryItem.id}`)}
+              activeOpacity={0.9}
             >
-              {inProgress.map((item) => (
-                <CoverCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => router.push(`/media/${item.id}`)}
-                />
-              ))}
-            </ScrollView>
-          ) : (
-            <View
-              style={[
-                styles.emptyInline,
-                { backgroundColor: theme.surface, borderColor: theme.border },
-              ]}
-            >
-              <EmptyState
-                title="Nothing in progress"
-                description="Start something you're currently reading, watching, or playing."
-                actionLabel="+ Add Item"
-                onAction={() => setSheetVisible(true)}
-                style={styles.emptyInlineContent}
+              <Image
+                source={{ uri: primaryItem.coverUrl || undefined }}
+                style={styles.heroCover}
+                contentFit="cover"
               />
-            </View>
-          )}
-        </View>
+              <View style={[styles.heroOverlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)' }]} />
+              
+              <View style={styles.heroContent}>
+                <View style={styles.heroTop}>
+                  <View style={styles.heroBadge}>
+                    <CategoryBadge type={primaryItem.type} size={14} />
+                  </View>
+                </View>
+                <View style={styles.heroBottom}>
+                  <Text style={styles.heroTitle} numberOfLines={2}>{primaryItem.title}</Text>
+                  {primaryItem.subtitle && (
+                    <Text style={styles.heroSubtitle} numberOfLines={1}>{primaryItem.subtitle}</Text>
+                  )}
+                  <View style={styles.heroAction}>
+                    <Text style={styles.heroActionText}>Continue</Text>
+                    <ChevronRight size={16} color="#FFF" />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={[styles.emptyInline, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+            <EmptyState
+              title="Your library awaits"
+              description="Start tracking the stories you're experiencing right now."
+              actionLabel="Add Item"
+              onAction={() => setSheetVisible(true)}
+              style={{ padding: Spacing.xl }}
+            />
+          </View>
+        )}
 
-        {/* Recently Completed */}
-        {recentlyCompleted.length > 0 && (
+        {/* Up Next */}
+        {otherInProgress.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                Recently Completed
-              </Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/library")}>
-                <Text style={[styles.seeAll, { color: theme.accentMovies }]}>
-                  See all
-                </Text>
-              </TouchableOpacity>
+              <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Up Next</Text>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.cardRow}
-            >
-              {recentlyCompleted.map((item) => (
-                <CoverCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => router.push(`/media/${item.id}`)}
-                />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
+              {otherInProgress.map((item) => (
+                <CoverCard key={item.id} item={item} onPress={() => router.push(`/media/${item.id}`)} />
               ))}
             </ScrollView>
           </View>
         )}
 
+        {/* Recent Activity */}
         <View style={styles.section}>
           <ActivityFeed />
         </View>
       </ScrollView>
 
-      {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.textPrimary }]}
-        onPress={() => setSheetVisible(true)}
-        accessibilityLabel="Add new media item"
-      >
-        <Plus size={24} color={theme.background} />
-      </TouchableOpacity>
-
-      <AddMediaSheet
-        visible={sheetVisible}
-        onClose={() => setSheetVisible(false)}
-      />
+      <AddMediaSheet visible={sheetVisible} onClose={() => setSheetVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -199,89 +140,85 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { paddingBottom: 100 },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.lg,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: Spacing.md, paddingTop: 12, paddingBottom: Spacing.md,
   },
-  headerLeft: { gap: 2 },
-  greeting: {
-    fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.bodySmall,
+  appName: { fontFamily: Typography.fontFamily.heading, fontSize: Typography.sizes.display },
+  addBtn: {
+    width: 36, height: 36, borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center',
   },
-  appName: {
-    fontFamily: Typography.fontFamily.heading,
-    fontSize: Typography.sizes.display,
+  heroSection: {
+    marginBottom: Spacing.xl,
   },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 999,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 999,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    fontFamily: Typography.fontFamily.primaryBold,
-    fontSize: Typography.sizes.bodySmall,
-    color: "#FFF",
-  },
-  section: { marginBottom: Spacing.lg },
-  sectionLabel: {
-    fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.caption,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: Spacing.sm,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  sectionTitle: {
-    fontFamily: Typography.fontFamily.primaryBold,
-    fontSize: Typography.sizes.h3,
-  },
-  seeAll: {
-    fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.bodySmall,
-  },
-  cardRow: { paddingHorizontal: Spacing.md, gap: Spacing.md },
-  cardItem: {},
-  emptyInline: {
+  heroCard: {
     marginHorizontal: Spacing.md,
-    borderRadius: 16,
-    borderWidth: 1,
-    minHeight: 140,
-    justifyContent: "center",
-    overflow: "hidden",
+    marginTop: Spacing.sm,
+    height: 220,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
-  emptyInlineContent: { flex: undefined, padding: Spacing.lg },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 999,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+  heroCover: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroContent: {
+    flex: 1,
+    padding: Spacing.md,
+    justifyContent: 'space-between',
+  },
+  heroTop: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  heroBadge: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 6,
+    borderRadius: 8,
+  },
+  heroBottom: {
+    gap: 4,
+  },
+  heroTitle: {
+    fontFamily: Typography.fontFamily.heading,
+    fontSize: 28,
+    color: '#FFF',
+    lineHeight: 32,
+  },
+  heroSubtitle: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.body,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  heroAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 4,
+  },
+  heroActionText: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
+    color: '#FFF',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  section: { marginBottom: Spacing.xl },
+  sectionHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: Spacing.md, marginBottom: Spacing.sm,
+  },
+  sectionTitle: { 
+    fontFamily: Typography.fontFamily.primarySemiBold, 
+    fontSize: Typography.sizes.caption,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  cardRow: { paddingHorizontal: Spacing.md, gap: 12 },
+  emptyInline: {
+    marginHorizontal: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1,
+    marginBottom: Spacing.xl, overflow: 'hidden',
   },
 });

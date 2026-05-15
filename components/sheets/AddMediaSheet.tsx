@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   sheetTitle: {
-    fontFamily: Typography.fontFamily.primaryBold,
+    fontFamily: Typography.fontFamily.primarySemiBold,
     fontSize: Typography.sizes.h2,
   },
   segRow: { flexDirection: "row", gap: Spacing.sm },
@@ -607,9 +607,9 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    height: 48,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: 14,
+    height: 44,
     fontFamily: Typography.fontFamily.primary,
     fontSize: Typography.sizes.body,
   },

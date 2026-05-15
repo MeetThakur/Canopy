@@ -308,16 +308,16 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   searchWrap: {
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
+    paddingTop: 12,
     paddingBottom: Spacing.sm,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    height: 48,
-    borderRadius: BorderRadius.lg,
+    paddingHorizontal: 14,
+    height: 44,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
   },
   input: {

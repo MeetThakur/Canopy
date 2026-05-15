@@ -261,7 +261,7 @@ export default function LibraryScreen() {
       )}
 
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.textPrimary }]}
+        style={[styles.fab, { backgroundColor: theme.accent }]}
         onPress={() => setSheetVisible(true)}
         accessibilityLabel="Add new media item"
       >
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
+    paddingTop: 12,
     paddingBottom: Spacing.sm,
   },
   pageTitle: {
@@ -296,9 +296,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 999,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -353,16 +353,16 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 999,
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
 });
