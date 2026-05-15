@@ -1,5 +1,5 @@
-export type MediaType = 'book' | 'movie' | 'tv' | 'game';
-export type Status = 'want' | 'inprogress' | 'completed';
+export type MediaType = "book" | "movie" | "tv" | "game";
+export type Status = "want" | "inprogress" | "completed";
 
 export interface MediaItem {
   id: string;
@@ -17,6 +17,7 @@ export interface MediaItem {
   sourceId: string; // API id for reference
 
   // Type-specific fields (optional)
+  description?: string;
   pages?: number;
   pagesRead?: number;
   runtime?: number;

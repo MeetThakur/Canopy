@@ -282,13 +282,7 @@ export default function SearchScreen() {
                   router.push({
                     pathname: "/media/preview",
                     params: {
-                      id: item.id,
-                      sourceId: item.sourceId || "",
-                      type: item.type,
-                      title: item.title,
-                      subtitle: item.subtitle || "",
-                      coverUrl: item.coverUrl || "",
-                      year: item.year || "",
+                      itemData: JSON.stringify(item),
                     },
                   });
                 }}

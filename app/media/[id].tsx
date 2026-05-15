@@ -1,28 +1,40 @@
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image } from 'expo-image';
-import { ChevronLeft, Edit3, Trash2, BookOpen, Clock, Calendar } from 'lucide-react-native';
-import { format } from 'date-fns';
-import { Colors } from '../../constants/colors';
-import { useTheme } from '../../hooks/useTheme';
-import { Typography } from '../../constants/typography';
-import { BorderRadius, Spacing } from '../../constants/spacing';
-import { useLibraryStore } from '../../stores/libraryStore';
-import { CategoryBadge } from '../../components/media/CategoryBadge';
-import { StatusPill } from '../../components/media/StatusPill';
-import { StarRating } from '../../components/ui/StarRating';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import * as Haptics from 'expo-haptics';
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Image } from "expo-image";
+import {
+  ChevronLeft,
+  Edit3,
+  Trash2,
+  BookOpen,
+  Clock,
+  Calendar,
+} from "lucide-react-native";
+import { format } from "date-fns";
+import { Colors } from "../../constants/colors";
+import { useTheme } from "../../hooks/useTheme";
+import { Typography } from "../../constants/typography";
+import { BorderRadius, Spacing } from "../../constants/spacing";
+import { useLibraryStore } from "../../stores/libraryStore";
+import { CategoryBadge } from "../../components/media/CategoryBadge";
+import { StatusPill } from "../../components/media/StatusPill";
+import { StarRating } from "../../components/ui/StarRating";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import * as Haptics from "expo-haptics";
 
 const STATUS_OPTIONS = [
-  { label: 'Want', value: 'want' as const },
-  { label: 'In Progress', value: 'inprogress' as const },
-  { label: 'Completed', value: 'completed' as const },
+  { label: "Want", value: "want" as const },
+  { label: "In Progress", value: "inprogress" as const },
+  { label: "Completed", value: "completed" as const },
 ];
 
 function InfoRow({ label, value }: { label: string; value: string | number }) {
@@ -30,16 +42,32 @@ function InfoRow({ label, value }: { label: string; value: string | number }) {
   const theme = isDark ? Colors.dark : Colors.light;
   return (
     <View style={infoStyles.row}>
-      <Text style={[infoStyles.label, { color: theme.textTertiary }]}>{label}</Text>
-      <Text style={[infoStyles.value, { color: theme.textPrimary }]}>{value}</Text>
+      <Text style={[infoStyles.label, { color: theme.textTertiary }]}>
+        {label}
+      </Text>
+      <Text style={[infoStyles.value, { color: theme.textPrimary }]}>
+        {value}
+      </Text>
     </View>
   );
 }
 
 const infoStyles = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
-  label: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall },
-  value: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall, maxWidth: '60%', textAlign: 'right' },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  label: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.bodySmall,
+  },
+  value: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
+    maxWidth: "60%",
+    textAlign: "right",
+  },
 });
 
 export default function MediaDetailScreen() {
@@ -55,21 +83,39 @@ export default function MediaDetailScreen() {
 
   if (!item) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+      <SafeAreaView
+        style={[styles.safe, { backgroundColor: theme.background }]}
+      >
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ChevronLeft size={24} color={theme.textPrimary} />
         </TouchableOpacity>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: theme.textSecondary, fontFamily: Typography.fontFamily.primary }}>Item not found.</Text>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontFamily: Typography.fontFamily.primary,
+            }}
+          >
+            Item not found.
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
   const handleDelete = () => {
-    Alert.alert('Remove Item', `Remove "${item.title}" from your library?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => { removeItem(id); router.back(); } },
+    Alert.alert("Remove Item", `Remove "${item.title}" from your library?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => {
+          removeItem(id);
+          router.back();
+        },
+      },
     ]);
   };
 
@@ -78,29 +124,42 @@ export default function MediaDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const handleStatusChange = (status: 'want' | 'inprogress' | 'completed') => {
+  const handleStatusChange = (status: "want" | "inprogress" | "completed") => {
     updateItem(id, { status });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const typeSpecificFields = () => {
     switch (item.type) {
-      case 'book': return [
-        item.pages ? { label: 'Pages', value: item.pages } : null,
-        item.pagesRead ? { label: 'Pages Read', value: item.pagesRead } : null,
-      ].filter(Boolean);
-      case 'movie': return [
-        item.runtime ? { label: 'Runtime', value: `${item.runtime} min` } : null,
-      ].filter(Boolean);
-      case 'tv': return [
-        item.seasons ? { label: 'Seasons', value: item.seasons } : null,
-        item.episodesWatched ? { label: 'Episodes Watched', value: item.episodesWatched } : null,
-      ].filter(Boolean);
-      case 'game': return [
-        item.platform ? { label: 'Platform', value: item.platform } : null,
-        item.hoursPlayed ? { label: 'Hours Played', value: `${item.hoursPlayed}h` } : null,
-      ].filter(Boolean);
-      default: return [];
+      case "book":
+        return [
+          item.pages ? { label: "Pages", value: item.pages } : null,
+          item.pagesRead
+            ? { label: "Pages Read", value: item.pagesRead }
+            : null,
+        ].filter(Boolean);
+      case "movie":
+        return [
+          item.runtime
+            ? { label: "Runtime", value: `${item.runtime} min` }
+            : null,
+        ].filter(Boolean);
+      case "tv":
+        return [
+          item.seasons ? { label: "Seasons", value: item.seasons } : null,
+          item.episodesWatched
+            ? { label: "Episodes Watched", value: item.episodesWatched }
+            : null,
+        ].filter(Boolean);
+      case "game":
+        return [
+          item.platform ? { label: "Platform", value: item.platform } : null,
+          item.hoursPlayed
+            ? { label: "Hours Played", value: `${item.hoursPlayed}h` }
+            : null,
+        ].filter(Boolean);
+      default:
+        return [];
     }
   };
 
@@ -108,27 +167,60 @@ export default function MediaDetailScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       {/* Hero */}
       <View style={styles.hero}>
-        <Image source={{ uri: item.coverUrl || undefined }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={20} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back">
+        <Image
+          source={{ uri: item.coverUrl || undefined }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          blurRadius={20}
+        />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: "rgba(0,0,0,0.55)" },
+          ]}
+        />
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityLabel="Go back"
+        >
           <ChevronLeft size={24} color="#FFF" />
         </TouchableOpacity>
         <View style={styles.heroContent}>
-          <Image source={{ uri: item.coverUrl || undefined }} style={styles.cover} contentFit="cover" transition={200} />
+          <Image
+            source={{ uri: item.coverUrl || undefined }}
+            style={styles.cover}
+            contentFit="cover"
+            transition={200}
+          />
           <View style={styles.heroMeta}>
             <CategoryBadge type={item.type} />
-            <Text style={styles.heroTitle} numberOfLines={3}>{item.title}</Text>
-            <Text style={styles.heroSubtitle} numberOfLines={1}>{item.subtitle}</Text>
+            <Text style={styles.heroTitle} numberOfLines={3}>
+              {item.title}
+            </Text>
+            <Text style={styles.heroSubtitle} numberOfLines={1}>
+              {item.subtitle}
+            </Text>
             {item.year && <Text style={styles.heroYear}>{item.year}</Text>}
-            <StarRating rating={item.rating} size={18} onRate={handleRate} editable />
+            <StarRating
+              rating={item.rating}
+              size={18}
+              onRate={handleRate}
+              editable
+            />
           </View>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Status Selector */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Status</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+            Status
+          </Text>
           <View style={styles.statusRow}>
             {STATUS_OPTIONS.map((opt) => (
               <TouchableOpacity
@@ -137,13 +229,29 @@ export default function MediaDetailScreen() {
                 style={[
                   styles.statusBtn,
                   {
-                    backgroundColor: item.status === opt.value ? theme.textPrimary : theme.surface2,
-                    borderColor: item.status === opt.value ? theme.textPrimary : theme.border,
+                    backgroundColor:
+                      item.status === opt.value
+                        ? theme.textPrimary
+                        : theme.surface2,
+                    borderColor:
+                      item.status === opt.value
+                        ? theme.textPrimary
+                        : theme.border,
                   },
                 ]}
                 accessibilityLabel={`Set status to ${opt.label}`}
               >
-                <Text style={[styles.statusBtnText, { color: item.status === opt.value ? theme.background : theme.textSecondary }]}>
+                <Text
+                  style={[
+                    styles.statusBtnText,
+                    {
+                      color:
+                        item.status === opt.value
+                          ? theme.background
+                          : theme.textSecondary,
+                    },
+                  ]}
+                >
                   {opt.label}
                 </Text>
               </TouchableOpacity>
@@ -152,21 +260,64 @@ export default function MediaDetailScreen() {
         </View>
 
         {/* Details */}
+        {item.description ? (
+          <Card style={[styles.card, { borderColor: theme.border }]}>
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+              Description
+            </Text>
+            <Text style={[styles.notes, { color: theme.textPrimary }]}>
+              {item.description}
+            </Text>
+          </Card>
+        ) : null}
+
         <Card style={[styles.card, { borderColor: theme.border }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Details</Text>
-          {item.genre?.length ? <InfoRow label="Genre" value={item.genre.slice(0, 2).join(', ')} /> : null}
-          {item.language ? <InfoRow label="Language" value={item.language} /> : null}
-          {typeSpecificFields().map((f) => f && <InfoRow key={f.label} label={f.label} value={f.value as string | number} />)}
-          {item.startDate ? <InfoRow label="Started" value={format(new Date(item.startDate), 'MMM d, yyyy')} /> : null}
-          {item.endDate ? <InfoRow label="Finished" value={format(new Date(item.endDate), 'MMM d, yyyy')} /> : null}
-          <InfoRow label="Added" value={format(new Date(item.createdAt), 'MMM d, yyyy')} />
+          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+            Details
+          </Text>
+          {item.genre?.length ? (
+            <InfoRow label="Genre" value={item.genre.slice(0, 2).join(", ")} />
+          ) : null}
+          {item.language ? (
+            <InfoRow label="Language" value={item.language} />
+          ) : null}
+          {typeSpecificFields().map(
+            (f) =>
+              f && (
+                <InfoRow
+                  key={f.label}
+                  label={f.label}
+                  value={f.value as string | number}
+                />
+              ),
+          )}
+          {item.startDate ? (
+            <InfoRow
+              label="Started"
+              value={format(new Date(item.startDate), "MMM d, yyyy")}
+            />
+          ) : null}
+          {item.endDate ? (
+            <InfoRow
+              label="Finished"
+              value={format(new Date(item.endDate), "MMM d, yyyy")}
+            />
+          ) : null}
+          <InfoRow
+            label="Added"
+            value={format(new Date(item.createdAt), "MMM d, yyyy")}
+          />
         </Card>
 
         {/* Notes */}
         {item.notes ? (
           <Card style={[styles.card, { borderColor: theme.border }]}>
-            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Your Notes</Text>
-            <Text style={[styles.notes, { color: theme.textPrimary }]}>{item.notes}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+              Your Notes
+            </Text>
+            <Text style={[styles.notes, { color: theme.textPrimary }]}>
+              {item.notes}
+            </Text>
           </Card>
         ) : null}
 
@@ -185,21 +336,71 @@ export default function MediaDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  hero: { height: 280, justifyContent: 'flex-end' },
-  backBtn: { position: 'absolute', top: Spacing.md, left: Spacing.md, zIndex: 10, width: 40, height: 40, justifyContent: 'center' },
-  heroContent: { flexDirection: 'row', gap: Spacing.md, padding: Spacing.md, alignItems: 'flex-end' },
-  cover: { width: 100, height: 150, borderRadius: BorderRadius.md, backgroundColor: '#2E2C2A' },
+  hero: { height: 280, justifyContent: "flex-end" },
+  backBtn: {
+    position: "absolute",
+    top: Spacing.md,
+    left: Spacing.md,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+  },
+  heroContent: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    padding: Spacing.md,
+    alignItems: "flex-end",
+  },
+  cover: {
+    width: 100,
+    height: 150,
+    borderRadius: BorderRadius.md,
+    backgroundColor: "#2E2C2A",
+  },
   heroMeta: { flex: 1, gap: Spacing.xs, paddingBottom: Spacing.xs },
-  heroTitle: { fontFamily: Typography.fontFamily.heading, fontSize: Typography.sizes.h1, color: '#FFF', lineHeight: 30 },
-  heroSubtitle: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall, color: 'rgba(255,255,255,0.7)' },
-  heroYear: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.caption, color: 'rgba(255,255,255,0.5)' },
+  heroTitle: {
+    fontFamily: Typography.fontFamily.heading,
+    fontSize: Typography.sizes.h1,
+    color: "#FFF",
+    lineHeight: 30,
+  },
+  heroSubtitle: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.bodySmall,
+    color: "rgba(255,255,255,0.7)",
+  },
+  heroYear: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.caption,
+    color: "rgba(255,255,255,0.5)",
+  },
   scroll: { padding: Spacing.md, gap: Spacing.md, paddingBottom: 80 },
   section: { gap: Spacing.sm },
   card: { borderWidth: 1, padding: Spacing.md, gap: Spacing.xs },
-  sectionTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.caption, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing.xs },
-  statusRow: { flexDirection: 'row', gap: Spacing.sm },
-  statusBtn: { flex: 1, paddingVertical: 10, borderRadius: BorderRadius.md, borderWidth: 1, alignItems: 'center' },
-  statusBtnText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall },
-  notes: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.body, lineHeight: 24 },
+  sectionTitle: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.caption,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: Spacing.xs,
+  },
+  statusRow: { flexDirection: "row", gap: Spacing.sm },
+  statusBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  statusBtnText: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
+  },
+  notes: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.body,
+    lineHeight: 24,
+  },
   deleteBtn: { marginTop: Spacing.sm },
 });

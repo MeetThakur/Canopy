@@ -33,6 +33,7 @@ const baseSchema = z.object({
   rating: z.number().min(0).max(5).default(0),
   notes: z.string().default(""),
   year: z.number().optional(),
+  description: z.string().optional(),
   pages: z.number().optional(),
   pagesRead: z.number().optional(),
   runtime: z.number().optional(),
@@ -126,6 +127,7 @@ export function AddMediaSheet({
     rating: existingItem?.rating ?? prefill?.rating ?? 0,
     notes: existingItem?.notes ?? prefill?.notes ?? "",
     year: existingItem?.year ?? prefill?.year,
+    description: existingItem?.description ?? prefill?.description,
     pages: existingItem?.pages ?? prefill?.pages,
     pagesRead: existingItem?.pagesRead,
     runtime: existingItem?.runtime ?? prefill?.runtime,
@@ -162,8 +164,8 @@ export function AddMediaSheet({
         createdAt: now,
         updatedAt: now,
         sourceId: prefillSourceId || "",
-        genre: [],
-        language: "",
+        genre: prefill?.genre || [],
+        language: prefill?.language || "",
       };
       addItem(newItem);
     }
