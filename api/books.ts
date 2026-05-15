@@ -1,60 +1,77 @@
-import { MediaSearchResult } from '../types/api';
+import { MediaSearchResult } from "../types/api";
 
-const BASE = 'https://openlibrary.org';
+const HARDCOVER_TOKEN =
+  "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJIYXJkY292ZXIiLCJ2ZXJzaW9uIjoiOCIsImp0aSI6IjY1MmEzMGIwLTYxNTEtNDE5Mi1iZWEzLTA4OGIyY2FmNWFjMyIsImFwcGxpY2F0aW9uSWQiOjIsInN1YiI6Ijk5MTQwIiwiYXVkIjoiMSIsImlkIjoiOTkxNDAiLCJsb2dnZWRJbiI6dHJ1ZSwiaWF0IjoxNzc4ODMzMTQ3LCJleHAiOjE4MTAzNjkxNDcsImh0dHBzOi8vaGFzdXJhLmlvL2p3dC9jbGFpbXMiOnsieC1oYXN1cmEtYWxsb3dlZC1yb2xlcyI6WyJ1c2VyIl0sIngtaGFzdXJhLWRlZmF1bHQtcm9sZSI6InVzZXIiLCJ4LWhhc3VyYS1yb2xlIjoidXNlciIsIlgtaGFzdXJhLXVzZXItaWQiOiI5OTE0MCJ9LCJ1c2VyIjp7ImlkIjo5OTE0MH19.KIHyF8_0E4i9mhxvVNkUwN93cqQQW42SyZSgWunqeTw";
+const BASE = "https://api.hardcover.app/v1/graphql";
 
-interface OLDoc {
-  key: string;
+interface HardcoverDocument {
+  id: string;
   title: string;
-  author_name?: string[];
-  cover_i?: number;
-  first_publish_year?: number;
-  language?: string[];
-  number_of_pages_median?: number;
-  subject?: string[];
+  subtitle?: string;
+  author_names?: string[];
+  image?: { url: string };
+  release_year?: number;
+  pages?: number;
+  description?: string;
+  genres?: string[];
 }
 
-function mapOpenLibraryToSearchResult(doc: OLDoc): MediaSearchResult {
+interface HardcoverSearchResult {
+  document: HardcoverDocument;
+}
+
+function mapHardcoverToSearchResult(doc: HardcoverDocument): MediaSearchResult {
   return {
-    id: doc.key,
-    sourceId: doc.key,
-    type: 'book',
+    id: String(doc.id),
+    sourceId: String(doc.id),
+    type: "book",
     title: doc.title,
-    subtitle: doc.author_name?.[0] ?? 'Unknown Author',
-    coverUrl: doc.cover_i
-      ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
-      : '',
-    year: doc.first_publish_year,
-    language: doc.language?.[0],
-    pages: doc.number_of_pages_median,
-    genre: doc.subject?.slice(0, 3),
+    subtitle: doc.author_names?.[0] ?? doc.subtitle ?? "Unknown Author",
+    coverUrl: doc.image?.url ?? "",
+    year: doc.release_year,
+    pages: doc.pages,
+    description: doc.description,
+    genre: doc.genres?.slice(0, 3),
   };
 }
 
 export async function searchBooks(query: string): Promise<MediaSearchResult[]> {
-  const res = await fetch(
-    `${BASE}/search.json?q=${encodeURIComponent(query)}&limit=15&fields=key,title,author_name,cover_i,first_publish_year,language,number_of_pages_median,subject`
-  );
-  if (!res.ok) throw new Error('Books search failed');
-  const data: { docs: OLDoc[] } = await res.json();
+  const graphqlQuery = `
+    query SearchBooks($query: String!) {
+      search(query: $query) {
+        results
+      }
+    }
+  `;
 
-  return data.docs
-    .filter((doc) => doc.title)
-    .map((doc) => ({
-      id: doc.key,
-      sourceId: doc.key,
-      type: 'book',
-      title: doc.title,
-      subtitle: doc.author_name?.[0] ?? 'Unknown Author',
-      coverUrl: doc.cover_i
-        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
-        : '',
-      year: doc.first_publish_year,
-      language: doc.language?.[0],
-      pages: doc.number_of_pages_median,
-      genre: doc.subject?.slice(0, 3),
-    }));
+  const res = await fetch(BASE, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${HARDCOVER_TOKEN}`,
+    },
+    body: JSON.stringify({
+      query: graphqlQuery,
+      variables: { query },
+    }),
+  });
+
+  if (!res.ok) throw new Error("Books search failed");
+  const data = await res.json();
+
+  if (data.errors) {
+    console.error("Hardcover API Errors:", data.errors);
+    throw new Error("Books search failed via Hardcover");
+  }
+
+  const results = data.data?.search?.results;
+  if (!results || !results.hits) return [];
+
+  return results.hits.map((hit: HardcoverSearchResult) =>
+    mapHardcoverToSearchResult(hit.document),
+  );
 }
 
 export async function getTrendingBooks(): Promise<MediaSearchResult[]> {
-  return searchBooks('bestseller');
+  return searchBooks("bestseller");
 }
