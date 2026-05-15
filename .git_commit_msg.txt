@@ -1,7 +1,6 @@
-style: monochrome editorial redesign
+style: ultra-minimalist typography-driven homepage
 
-- Implemented pure stark monochrome palette (black/white) matching reference
-- Removed all traces of purple/AI aesthetic
-- Updated typography: '35 Tickets' style huge bold italic headers on Home and Library
-- Used outline pill buttons and transparent/outline styling for secondary UI
-- Fixed Library screen flex collapse issue that was preventing the FlashList from rendering
+- Removed the giant numbers and stat grid from the homepage.
+- Replaced the horizontal wide card (which cut off posters) with a large vertical cover carousel (using an exact 2:3 aspect ratio so posters fit perfectly without being cut).
+- Simplified UI to just show a bold "Reading & Watching" carousel and an "Up Next" clean list feed.
+- Fully committed to the minimalist editorial aesthetic with high-contrast typography and negative space.
