@@ -7,6 +7,7 @@ import {
   Jost_500Medium,
   Jost_600SemiBold,
   Jost_700Bold,
+  Jost_700Bold_Italic,
 } from '@expo-google-fonts/jost';
 import { StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +21,7 @@ export default function RootLayout() {
     Jost_500Medium,
     Jost_600SemiBold,
     Jost_700Bold,
+    Jost_700Bold_Italic,
   });
 
   useEffect(() => {

@@ -21,7 +21,6 @@ import { BorderRadius, Spacing } from "../../constants/spacing";
 import { useLibraryStore } from "../../stores/libraryStore";
 import { MediaRow } from "../../components/media/MediaRow";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { CategoryBadge } from "../../components/media/CategoryBadge";
 import { AddMediaSheet } from "../../components/sheets/AddMediaSheet";
 import { MediaType, Status, MediaItem } from "../../types/media";
 
@@ -52,11 +51,8 @@ function GridCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
   const theme = isDark ? Colors.dark : Colors.light;
   return (
     <TouchableOpacity style={styles.gridCard} onPress={onPress} accessibilityLabel={item.title}>
-      <View style={styles.gridCoverContainer}>
+      <View style={[styles.gridCoverContainer, { borderColor: theme.border, borderWidth: 1 }]}>
         <Image source={{ uri: item.coverUrl || undefined }} style={styles.gridCover} contentFit="cover" transition={200} />
-        <View style={styles.gridIconOverlay}>
-          <CategoryBadge type={item.type} size={14} />
-        </View>
       </View>
       <Text style={[styles.gridTitle, { color: theme.textPrimary }]} numberOfLines={2}>
         {item.title}
@@ -106,108 +102,134 @@ export default function LibraryScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-      {/* Header */}
+      {/* Huge Header */}
       <View style={styles.headerRow}>
-        <View>
-          <Text style={[styles.pageTitle, { color: theme.textPrimary }]}>My Library</Text>
-          <Text style={[styles.itemCount, { color: theme.textTertiary }]}>
-            {orderedItems.length} {orderedItems.length === 1 ? "item" : "items"}
+        <View style={styles.headerTextWrap}>
+          <Text style={[styles.countHuge, { color: theme.textPrimary }]}>
+            {orderedItems.length}
+          </Text>
+          <Text style={[styles.pageTitleHuge, { color: theme.textPrimary }]}>
+            Items
           </Text>
         </View>
         <TouchableOpacity
           onPress={toggleView}
-          style={[styles.iconBtn, { backgroundColor: theme.surface2 }]}
+          style={[styles.iconBtn, { borderColor: theme.border, borderWidth: 1 }]}
           accessibilityLabel="Toggle view mode"
         >
           {viewMode === "list" ? (
-            <LayoutGrid size={18} color={theme.textPrimary} />
+            <LayoutGrid size={20} color={theme.textPrimary} />
           ) : (
-            <List size={18} color={theme.textPrimary} />
+            <List size={20} color={theme.textPrimary} />
           )}
         </TouchableOpacity>
       </View>
 
       {/* Category tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
-        {CATEGORY_TABS.map((tab) => {
-          const active = activeCategory === tab.value;
-          return (
-            <TouchableOpacity
-              key={tab.value}
-              onPress={() => setActiveCategory(tab.value)}
-              style={[styles.tab, { borderBottomColor: active ? theme.accent : "transparent", borderBottomWidth: 2 }]}
-              accessibilityLabel={`Filter by ${tab.label}`}
-            >
-              <Text style={[styles.tabText, { color: active ? theme.accent : theme.textTertiary, fontFamily: active ? Typography.fontFamily.primarySemiBold : Typography.fontFamily.primary }]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      <View style={{ flexShrink: 0 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
+          {CATEGORY_TABS.map((tab) => {
+            const active = activeCategory === tab.value;
+            return (
+              <TouchableOpacity
+                key={tab.value}
+                onPress={() => setActiveCategory(tab.value)}
+                style={[
+                  styles.pillOutline,
+                  { 
+                    borderColor: active ? theme.textPrimary : theme.border,
+                    backgroundColor: active ? theme.textPrimary : 'transparent'
+                  }
+                ]}
+                accessibilityLabel={`Filter by ${tab.label}`}
+              >
+                <Text style={[
+                  styles.pillOutlineText,
+                  { color: active ? theme.background : theme.textSecondary }
+                ]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {/* Status pills */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
-        {STATUS_FILTERS.map((f) => {
-          const active = activeStatus === f.value;
-          return (
-            <TouchableOpacity
-              key={f.value}
-              onPress={() => setActiveStatus(f.value)}
-              style={[styles.pill, { backgroundColor: active ? theme.textPrimary : theme.surface2 }]}
-              accessibilityLabel={`Filter by ${f.label}`}
-            >
-              <Text style={[styles.pillText, { color: active ? theme.background : theme.textSecondary }]}>
-                {f.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      <View style={{ flexShrink: 0 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
+          {STATUS_FILTERS.map((f) => {
+            const active = activeStatus === f.value;
+            return (
+              <TouchableOpacity
+                key={f.value}
+                onPress={() => setActiveStatus(f.value)}
+                style={[
+                  styles.pillOutline,
+                  { 
+                    borderColor: active ? theme.textPrimary : theme.border,
+                    backgroundColor: active ? theme.textPrimary : 'transparent'
+                  }
+                ]}
+                accessibilityLabel={`Filter by ${f.label}`}
+              >
+                <Text style={[
+                  styles.pillOutlineText,
+                  { color: active ? theme.background : theme.textSecondary }
+                ]}>
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
-      {/* Content */}
-      {filtered.length === 0 ? (
-        <EmptyState
-          title="Nothing here yet"
-          description="Start building your library."
-          actionLabel="Add Item"
-          onAction={() => setSheetVisible(true)}
-        />
-      ) : viewMode === "list" ? (
-        <FlashList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <MediaRow
-              item={item}
-              onPress={() => router.push(`/media/${item.id}`)}
-              style={{ paddingHorizontal: Spacing.md }}
-            />
-          )}
-          estimatedItemSize={88}
-          contentContainerStyle={{ paddingBottom: 80 }}
-        />
-      ) : (
-        <FlashList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          renderItem={({ item }) => (
-            <View style={{ flex: 1, padding: Spacing.xs }}>
-              <GridCard item={item} onPress={() => router.push(`/media/${item.id}`)} />
-            </View>
-          )}
-          estimatedItemSize={160}
-          contentContainerStyle={{ paddingHorizontal: Spacing.sm, paddingBottom: 80 }}
-        />
-      )}
+      {/* Content - wrapped in flex: 1 to prevent layout collapse */}
+      <View style={{ flex: 1, marginTop: Spacing.sm }}>
+        {filtered.length === 0 ? (
+          <EmptyState
+            title="Nothing here yet"
+            description="Start building your collection."
+            actionLabel="Add Item"
+            onAction={() => setSheetVisible(true)}
+          />
+        ) : viewMode === "list" ? (
+          <FlashList
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <MediaRow
+                item={item}
+                onPress={() => router.push(`/media/${item.id}`)}
+                style={{ paddingHorizontal: Spacing.md }}
+              />
+            )}
+            estimatedItemSize={88}
+            contentContainerStyle={{ paddingBottom: 100 }}
+          />
+        ) : (
+          <FlashList
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            renderItem={({ item }) => (
+              <View style={{ flex: 1, padding: Spacing.xs }}>
+                <GridCard item={item} onPress={() => router.push(`/media/${item.id}`)} />
+              </View>
+            )}
+            estimatedItemSize={160}
+            contentContainerStyle={{ paddingHorizontal: Spacing.sm, paddingBottom: 100 }}
+          />
+        )}
+      </View>
 
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.accent }]}
+        style={[styles.fab, { backgroundColor: theme.textPrimary }]}
         onPress={() => setSheetVisible(true)}
         accessibilityLabel="Add new media item"
       >
-        <Plus size={22} color="#FFF" />
+        <Plus size={24} color={theme.background} />
       </TouchableOpacity>
 
       <AddMediaSheet visible={sheetVisible} onClose={() => setSheetVisible(false)} />
@@ -218,34 +240,50 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   headerRow: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: Spacing.md, paddingTop: 12, paddingBottom: Spacing.sm,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start",
+    paddingHorizontal: Spacing.md, paddingTop: 16, paddingBottom: Spacing.md,
   },
-  pageTitle: { fontFamily: Typography.fontFamily.heading, fontSize: Typography.sizes.display },
-  itemCount: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall, marginTop: 2 },
-  iconBtn: { width: 36, height: 36, borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  tabsRow: { paddingHorizontal: Spacing.md, gap: Spacing.lg, paddingBottom: Spacing.xs },
-  tab: { paddingVertical: Spacing.sm },
-  tabText: { fontSize: Typography.sizes.body },
-  pillRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingVertical: Spacing.sm },
-  pill: { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full },
-  pillText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall },
+  headerTextWrap: {
+    flex: 1,
+  },
+  countHuge: {
+    fontFamily: Typography.fontFamily.heading,
+    fontSize: 54,
+    lineHeight: 56,
+  },
+  pageTitleHuge: { 
+    fontFamily: Typography.fontFamily.heading, 
+    fontSize: 42,
+    lineHeight: 46,
+  },
+  iconBtn: { 
+    width: 44, height: 44, borderRadius: 22, 
+    justifyContent: "center", alignItems: "center" 
+  },
+  tabsRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingBottom: Spacing.xs },
+  pillRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingBottom: Spacing.sm },
+  pillOutline: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  pillOutlineText: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
+  },
   gridCard: { marginBottom: Spacing.sm },
   gridCoverContainer: {
     height: 150, width: "100%", borderRadius: BorderRadius.md,
-    overflow: "hidden", backgroundColor: "#2E2C2A", marginBottom: Spacing.xs,
+    overflow: "hidden", backgroundColor: "transparent", marginBottom: Spacing.xs,
   },
   gridCover: { width: "100%", height: "100%" },
-  gridIconOverlay: {
-    position: "absolute", top: 6, right: 6,
-    backgroundColor: "rgba(0,0,0,0.6)", borderRadius: BorderRadius.sm, padding: 4,
-  },
   gridTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: 12 },
   fab: {
     position: "absolute", bottom: 24, right: 20,
-    width: 48, height: 48, borderRadius: 14,
+    width: 56, height: 56, borderRadius: 28,
     justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15, shadowRadius: 6, elevation: 4,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
   },
 });

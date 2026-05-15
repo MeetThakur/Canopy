@@ -15,10 +15,8 @@ import { AddMediaSheet } from '../../components/sheets/AddMediaSheet';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useStatsStore } from '../../stores/statsStore';
 import { MediaItem, MediaType } from '../../types/media';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_W = SCREEN_W - 32;
 
 function typeIcon(type: MediaType, color: string, size = 13) {
   if (type === 'book') return <BookOpen size={size} color={color} />;
@@ -30,9 +28,12 @@ function typeIcon(type: MediaType, color: string, size = 13) {
 // ─── Featured wide card ───────────────────────────────────────────────────────
 
 function FeaturedCard({ item, onPress, accent }: { item: MediaItem; onPress: () => void; accent: string }) {
+  const { isDark } = useTheme();
+  const theme = isDark ? Colors.dark : Colors.light;
+
   return (
     <TouchableOpacity
-      style={styles.featuredCard}
+      style={[styles.featuredCard, { borderColor: theme.border }]}
       onPress={onPress}
       activeOpacity={0.9}
       accessibilityLabel={item.title}
@@ -40,16 +41,11 @@ function FeaturedCard({ item, onPress, accent }: { item: MediaItem; onPress: () 
       {item.coverUrl ? (
         <Image source={{ uri: item.coverUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
       ) : null}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.85)']}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0.3 }}
-        end={{ x: 0, y: 1 }}
-      />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]} />
       <View style={styles.featuredInner}>
-        <View style={[styles.featuredTypePill, { backgroundColor: accent + '30' }]}>
-          {typeIcon(item.type, accent, 11)}
-          <Text style={[styles.featuredTypeText, { color: accent }]}>
+        <View style={[styles.featuredTypePill, { borderColor: 'rgba(255,255,255,0.3)' }]}>
+          {typeIcon(item.type, '#FFF', 11)}
+          <Text style={[styles.featuredTypeText, { color: '#FFF' }]}>
             {item.type === 'book' ? 'Book' : item.type === 'movie' ? 'Film' : item.type === 'tv' ? 'Show' : 'Game'}
           </Text>
         </View>
@@ -69,39 +65,30 @@ function CompactCard({ item, onPress }: { item: MediaItem; onPress: () => void }
   const theme = isDark ? Colors.dark : Colors.light;
   return (
     <TouchableOpacity
-      style={[styles.compactCard, { backgroundColor: theme.surface }]}
+      style={[styles.compactCard, { backgroundColor: theme.background, borderColor: theme.border }]}
       onPress={onPress}
       accessibilityLabel={item.title}
     >
-      <Image
-        source={{ uri: item.coverUrl || undefined }}
-        style={styles.compactCover}
-        contentFit="cover"
-        transition={200}
-      />
+      <View style={[styles.compactCoverWrap, { borderColor: theme.border }]}>
+        <Image
+          source={{ uri: item.coverUrl || undefined }}
+          style={styles.compactCover}
+          contentFit="cover"
+          transition={200}
+        />
+      </View>
       <View style={styles.compactMeta}>
         <Text style={[styles.compactTitle, { color: theme.textPrimary }]} numberOfLines={1}>
           {item.title}
         </Text>
         {item.subtitle ? (
-          <Text style={[styles.compactSub, { color: theme.textTertiary }]} numberOfLines={1}>
+          <Text style={[styles.compactSub, { color: theme.textSecondary }]} numberOfLines={1}>
             {item.subtitle}
           </Text>
         ) : null}
       </View>
-      <ChevronRight size={14} color={theme.textTertiary} />
+      <ChevronRight size={16} color={theme.textTertiary} />
     </TouchableOpacity>
-  );
-}
-
-// ─── Category stat block ──────────────────────────────────────────────────────
-
-function StatBlock({ label, count, color, bgColor }: { label: string; count: number; color: string; bgColor: string }) {
-  return (
-    <View style={[styles.statBlock, { backgroundColor: bgColor }]}>
-      <Text style={[styles.statBlockNum, { color }]}>{count}</Text>
-      <Text style={[styles.statBlockLabel, { color: color + 'AA' }]}>{label}</Text>
-    </View>
   );
 }
 
@@ -134,13 +121,6 @@ export default function HomeScreen() {
     setTimeout(() => setRefreshing(false), 600);
   }, [recalculateStats]);
 
-  const statData = [
-    { label: 'Books', count: stats.byCategory.book, color: theme.accentBooks, bg: theme.accentBooks + '12' },
-    { label: 'Films', count: stats.byCategory.movie, color: theme.accentMovies, bg: theme.accentMovies + '12' },
-    { label: 'Shows', count: stats.byCategory.tv, color: theme.accentTV, bg: theme.accentTV + '12' },
-    { label: 'Games', count: stats.byCategory.game, color: theme.accentGames, bg: theme.accentGames + '12' },
-  ];
-
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView
@@ -152,29 +132,50 @@ export default function HomeScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Text style={[styles.logo, { color: theme.textPrimary }]}>KANOPI</Text>
+          <View style={styles.headerTextWrap}>
+            <Text style={[styles.countHuge, { color: theme.textPrimary }]}>
+              {stats.totalItems}
+            </Text>
+            <Text style={[styles.pageTitleHuge, { color: theme.textPrimary }]}>
+              Items
+            </Text>
+          </View>
           <TouchableOpacity
-            style={[styles.addBtn, { backgroundColor: theme.accent }]}
+            style={[styles.addBtn, { borderColor: theme.border, borderWidth: 1 }]}
             onPress={() => setSheetVisible(true)}
             accessibilityLabel="Add new item"
           >
-            <Plus size={18} color="#FFF" strokeWidth={2.5} />
+            <Plus size={20} color={theme.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
         </View>
 
-        {/* ── Stats 2×2 grid ── */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statsRow}>
-            {statData.slice(0, 2).map((s) => (
-              <StatBlock key={s.label} label={s.label} count={s.count} color={s.color} bgColor={s.bg} />
-            ))}
-          </View>
-          <View style={styles.statsRow}>
-            {statData.slice(2).map((s) => (
-              <StatBlock key={s.label} label={s.label} count={s.count} color={s.color} bgColor={s.bg} />
-            ))}
-          </View>
-        </View>
+        {/* ── Filter Pills (Decorative for now, navigate to library later) ── */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.filterPills}
+        >
+          {['All Collection', 'Books', 'Films', 'Shows', 'Games'].map((pill, i) => (
+            <TouchableOpacity 
+              key={pill} 
+              style={[
+                styles.pillOutline, 
+                { 
+                  borderColor: i === 0 ? theme.textPrimary : theme.border,
+                  backgroundColor: i === 0 ? theme.textPrimary : 'transparent'
+                }
+              ]}
+              onPress={() => router.push('/(tabs)/library')}
+            >
+              <Text style={[
+                styles.pillOutlineText,
+                { color: i === 0 ? theme.background : theme.textPrimary }
+              ]}>
+                {pill}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         {/* ── In Progress ── */}
         <View style={styles.section}>
@@ -182,11 +183,6 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
               IN PROGRESS
             </Text>
-            {inProgress.length > 0 && (
-              <TouchableOpacity onPress={() => router.push('/(tabs)/library')} style={styles.seeAllBtn}>
-                <Text style={[styles.seeAll, { color: theme.accent }]}>See all</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           {featuredItem ? (
@@ -194,7 +190,7 @@ export default function HomeScreen() {
               <FeaturedCard
                 item={featuredItem}
                 onPress={() => router.push(`/media/${featuredItem.id}`)}
-                accent={theme.accent}
+                accent={theme.textPrimary}
               />
               {otherInProgress.length > 0 && (
                 <View style={styles.compactList}>
@@ -213,9 +209,9 @@ export default function HomeScreen() {
               style={[styles.emptyCard, { borderColor: theme.border }]}
               onPress={() => setSheetVisible(true)}
             >
-              <Plus size={22} color={theme.textTertiary} />
+              <Plus size={24} color={theme.textTertiary} />
               <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
-                Nothing in progress yet
+                No items in progress
               </Text>
             </TouchableOpacity>
           )}
@@ -241,12 +237,14 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/media/${item.id}`)}
                   accessibilityLabel={item.title}
                 >
-                  <Image
-                    source={{ uri: item.coverUrl || undefined }}
-                    style={styles.wantCover}
-                    contentFit="cover"
-                    transition={200}
-                  />
+                  <View style={[styles.wantCoverWrap, { borderColor: theme.border }]}>
+                    <Image
+                      source={{ uri: item.coverUrl || undefined }}
+                      style={styles.wantCover}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  </View>
                   <Text style={[styles.wantTitle, { color: theme.textPrimary }]} numberOfLines={2}>
                     {item.title}
                   </Text>
@@ -268,75 +266,73 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
     paddingHorizontal: Spacing.md, paddingTop: 20, paddingBottom: Spacing.md,
   },
-  logo: {
+  headerTextWrap: {
+    flex: 1,
+  },
+  countHuge: {
     fontFamily: Typography.fontFamily.heading,
-    fontSize: 28,
-    letterSpacing: 6,
+    fontSize: 54,
+    lineHeight: 56,
+  },
+  pageTitleHuge: { 
+    fontFamily: Typography.fontFamily.heading, 
+    fontSize: 42,
+    lineHeight: 46,
   },
   addBtn: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 48, height: 48, borderRadius: 24,
     justifyContent: 'center', alignItems: 'center',
   },
 
-  // Stats
-  statsContainer: {
+  // Pills
+  filterPills: {
     paddingHorizontal: Spacing.md,
-    gap: 8,
+    gap: Spacing.sm,
     marginBottom: Spacing.xl,
   },
-  statsRow: { flexDirection: 'row', gap: 8 },
-  statBlock: {
-    flex: 1, paddingVertical: 18, paddingHorizontal: 14,
-    borderRadius: BorderRadius.md,
-    alignItems: 'flex-start',
+  pillOutline: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 30,
+    borderWidth: 1,
   },
-  statBlockNum: {
-    fontFamily: Typography.fontFamily.heading,
-    fontSize: 28,
-    lineHeight: 32,
-  },
-  statBlockLabel: {
-    fontFamily: Typography.fontFamily.primaryMedium,
-    fontSize: Typography.sizes.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginTop: 4,
+  pillOutlineText: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.body,
   },
 
   // Sections
   section: { marginBottom: Spacing.xl },
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: Spacing.md, marginBottom: 14,
+    paddingHorizontal: Spacing.md, marginBottom: 16,
   },
   sectionTitle: {
-    fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.bodySmall,
-    letterSpacing: 2,
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: Typography.sizes.body,
+    letterSpacing: 1,
   },
-  seeAllBtn: {},
-  seeAll: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall },
 
   // Featured
-  featuredSection: { paddingHorizontal: Spacing.md, gap: 10 },
+  featuredSection: { paddingHorizontal: Spacing.md, gap: Spacing.sm },
   featuredCard: {
-    width: '100%', height: 220,
+    width: '100%', height: 200,
     borderRadius: BorderRadius.lg, overflow: 'hidden',
-    backgroundColor: '#1C1C2E',
+    borderWidth: 1,
     justifyContent: 'flex-end',
   },
   featuredInner: { padding: 20, gap: 6 },
   featuredTypePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 20,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 20, borderWidth: 1,
   },
   featuredTypeText: {
     fontFamily: Typography.fontFamily.primarySemiBold,
-    fontSize: Typography.sizes.caption,
+    fontSize: Typography.sizes.bodySmall,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -344,39 +340,45 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontFamily.heading,
     fontSize: Typography.sizes.h1,
     color: '#FFF',
-    lineHeight: 30,
+    lineHeight: 28,
   },
   featuredSubtitle: {
     fontFamily: Typography.fontFamily.primary,
     fontSize: Typography.sizes.bodySmall,
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.7)',
   },
 
   // Compact card
   compactCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 10, borderRadius: BorderRadius.sm,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    padding: 12, borderRadius: BorderRadius.md,
+    borderWidth: 1,
   },
-  compactCover: { width: 40, height: 56, borderRadius: 6 },
+  compactCoverWrap: {
+    width: 44, height: 62, borderRadius: 6,
+    overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth,
+  },
+  compactCover: { width: '100%', height: '100%' },
   compactMeta: { flex: 1 },
   compactTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.body },
   compactSub: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall, marginTop: 2 },
-  compactList: { gap: 2 },
+  compactList: { gap: Spacing.sm },
 
   // Empty state
   emptyCard: {
-    marginHorizontal: Spacing.md, height: 130,
+    marginHorizontal: Spacing.md, height: 140,
     borderRadius: BorderRadius.lg, borderWidth: 1, borderStyle: 'dashed',
-    alignItems: 'center', justifyContent: 'center', gap: 10,
+    alignItems: 'center', justifyContent: 'center', gap: 12,
   },
-  emptyText: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.body },
+  emptyText: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.body },
 
   // Want row
-  wantRow: { paddingHorizontal: Spacing.md, gap: 12 },
-  wantCard: { width: 100 },
-  wantCover: {
-    width: 100, height: 150, borderRadius: BorderRadius.sm,
-    marginBottom: 6, backgroundColor: '#1C1C2E',
+  wantRow: { paddingHorizontal: Spacing.md, gap: 14 },
+  wantCard: { width: 110 },
+  wantCoverWrap: {
+    width: 110, height: 160, borderRadius: BorderRadius.sm,
+    marginBottom: 8, overflow: 'hidden', borderWidth: 1,
   },
-  wantTitle: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: 12, lineHeight: 16 },
+  wantCover: { width: '100%', height: '100%' },
+  wantTitle: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: 13, lineHeight: 18 },
 });

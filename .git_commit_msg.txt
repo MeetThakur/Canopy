@@ -1,10 +1,7 @@
-refactor: complete visual identity overhaul
+style: monochrome editorial redesign
 
-- Replaced DM Sans / DM Serif with Jost (geometric, Futura-inspired)
-- New color palette: deep indigo/navy dark theme (#09090F) with
-  electric violet accent (#8B6CFF), cool tinted category colors
-- Light theme: clean cool gray with purple accent
-- Homepage: letter-spaced KANOPI logo, 2x2 color-tinted stat grid,
-  gradient-overlay featured card, compact in-progress list,
-  horizontal Up Next cover row
-- Removed drag-and-drop feature and related dependencies
+- Implemented pure stark monochrome palette (black/white) matching reference
+- Removed all traces of purple/AI aesthetic
+- Updated typography: '35 Tickets' style huge bold italic headers on Home and Library
+- Used outline pill buttons and transparent/outline styling for secondary UI
+- Fixed Library screen flex collapse issue that was preventing the FlashList from rendering
