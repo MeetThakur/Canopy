@@ -1,42 +1,42 @@
 // Kanopi Design System — Colors
-// A warm, earthy palette inspired by paper, ink, and candlelight.
-// One signature accent (amber) with muted category tints.
+// A cool, deep palette with electric accents.
+// Inspired by Linear, Raycast, and premium dark-mode UIs.
 
 export const Colors = {
   light: {
-    background: '#FAF8F5',
+    background: '#F8F8FA',
     surface: '#FFFFFF',
-    surface2: '#F2EFEB',
-    textPrimary: '#1C1917',
-    textSecondary: '#78716C',
-    textTertiary: '#A8A29E',
-    border: '#E7E5E4',
+    surface2: '#EDEDF0',
+    textPrimary: '#0F0F14',
+    textSecondary: '#6B6B7B',
+    textTertiary: '#9D9DAD',
+    border: '#E0E0E8',
     // Signature accent
-    accent: '#C2813D',
-    // Category tints — subtle, not screaming
-    accentBooks: '#B45309',
-    accentMovies: '#6366F1',
-    accentTV: '#0D9488',
-    accentGames: '#7C3AED',
-    success: '#16A34A',
-    destructive: '#DC2626',
+    accent: '#7C5CFC',
+    // Category tints
+    accentBooks: '#E8590C',
+    accentMovies: '#3B82F6',
+    accentTV: '#06B6D4',
+    accentGames: '#A855F7',
+    success: '#10B981',
+    destructive: '#EF4444',
   },
   dark: {
-    background: '#0C0A09',
-    surface: '#1C1917',
-    surface2: '#292524',
-    textPrimary: '#FAFAF9',
-    textSecondary: '#A8A29E',
-    textTertiary: '#57534E',
-    border: '#292524',
+    background: '#09090F',
+    surface: '#111118',
+    surface2: '#1A1A24',
+    textPrimary: '#E8E8F0',
+    textSecondary: '#8888A0',
+    textTertiary: '#4E4E66',
+    border: '#1E1E2E',
     // Signature accent
-    accent: '#D97706',
+    accent: '#8B6CFF',
     // Category tints
-    accentBooks: '#F59E0B',
-    accentMovies: '#818CF8',
-    accentTV: '#2DD4BF',
-    accentGames: '#A78BFA',
-    success: '#22C55E',
-    destructive: '#EF4444',
+    accentBooks: '#FB923C',
+    accentMovies: '#60A5FA',
+    accentTV: '#22D3EE',
+    accentGames: '#C084FC',
+    success: '#34D399',
+    destructive: '#F87171',
   },
 };

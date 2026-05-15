@@ -1,11 +1,10 @@
-feat: redesigned homepage with hero card and modern layout
+refactor: complete visual identity overhaul
 
-Introduced a modern, editorial-style homepage:
-- Time-of-day greeting and live date strip in header
-- Bold stats grid card: total count + 4 category columns
-- Featured hero card for current in-progress item with blurred
-  cover background, type pill, and Continue CTA
-- Horizontal scroll of additional in-progress items
-- Compact recent items list with cover thumbnail, subtitle, status
-- Removed ActivityFeed in favor of the cleaner Recent row layout
-- Removed unused StatsRow and standalone ActivityFeed imports
+- Replaced DM Sans / DM Serif with Jost (geometric, Futura-inspired)
+- New color palette: deep indigo/navy dark theme (#09090F) with
+  electric violet accent (#8B6CFF), cool tinted category colors
+- Light theme: clean cool gray with purple accent
+- Homepage: letter-spaced KANOPI logo, 2x2 color-tinted stat grid,
+  gradient-overlay featured card, compact in-progress list,
+  horizontal Up Next cover row
+- Removed drag-and-drop feature and related dependencies
