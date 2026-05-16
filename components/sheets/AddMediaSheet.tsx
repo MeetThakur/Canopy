@@ -21,8 +21,10 @@ import {
   Gamepad2,
   Search,
   Edit3,
+  Image as ImageIcon,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import { Colors } from "../../constants/colors";
 import { useTheme } from "../../hooks/useTheme";
 import { Typography } from "../../constants/typography";
@@ -230,6 +232,19 @@ export function AddMediaSheet({
     onClose();
   };
 
+
+  const pickImage = async (onChange: (val: string) => void) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [2, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      onChange(result.assets[0].uri);
+    }
+  };
 
   const inputStyle = [
     styles.input,
@@ -446,15 +461,24 @@ export function AddMediaSheet({
                 control={control}
                 name="coverUrl"
                 render={({ field: { value, onChange, onBlur } }) => (
-                  <TextInput
-                    style={inputStyle}
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    placeholder="https://…"
-                    placeholderTextColor={theme.textTertiary}
-                    autoCapitalize="none"
-                  />
+                  <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
+                    <TextInput
+                      style={[inputStyle, { flex: 1 }]}
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="https://…"
+                      placeholderTextColor={theme.textTertiary}
+                      autoCapitalize="none"
+                    />
+                    <TouchableOpacity
+                      style={[styles.imagePickerBtn, { backgroundColor: theme.surface2, borderColor: theme.border }]}
+                      onPress={() => pickImage(onChange)}
+                      accessibilityLabel="Pick image from gallery"
+                    >
+                      <ImageIcon size={20} color={theme.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
                 )}
               />
             </Field>
@@ -747,6 +771,10 @@ const styles = StyleSheet.create({
     height: 44,
     fontFamily: Typography.fontFamily.primary,
     fontSize: Typography.sizes.body,
+  },
+  imagePickerBtn: {
+    width: 44, height: 44, borderRadius: BorderRadius.sm, borderWidth: 1,
+    justifyContent: 'center', alignItems: 'center',
   },
   notesInput: { height: 100 },
   submitBtn: { marginTop: Spacing.sm },

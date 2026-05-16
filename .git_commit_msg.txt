@@ -1,4 +1,6 @@
-style: change homepage to minimal grid
+feat: image picker for covers and homepage layout tweak
 
-- Replaced the simple list layout on the homepage with a 2-column minimal grid layout
-- Preserved the calm, whitespace-heavy aesthetic while displaying covers more prominently
+- Added `expo-image-picker` to allow users to select an image from their gallery for media covers
+- Integrated an image picker button into the `AddMediaSheet` next to the Cover URL field
+- Updated `app.json` with `expo-image-picker` plugin config
+- Tweaked Homepage (`index.tsx`): "Currently Enjoying" is now a horizontal scrolling carousel of grid cards, while "Recently Added" is a minimal list layout

@@ -20,13 +20,13 @@ const { width: SCREEN_W } = Dimensions.get('window');
 
 // ─── Calm Minimal Grid Card ──────────────────────────────────────────────────
 
-function MinimalGridCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
+function MinimalGridCard({ item, onPress, style }: { item: MediaItem; onPress: () => void; style?: any }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
 
   return (
     <TouchableOpacity
-      style={styles.gridCard}
+      style={[styles.gridCard, style]}
       onPress={onPress}
       accessibilityLabel={item.title}
     >
@@ -42,6 +42,37 @@ function MinimalGridCard({ item, onPress }: { item: MediaItem; onPress: () => vo
           {item.title}
         </Text>
         <Text style={[styles.gridSubtitle, { color: theme.textSecondary }]} numberOfLines={1}>
+          {item.subtitle || item.type.toUpperCase()}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Calm Minimal Row ────────────────────────────────────────────────────────
+
+function MinimalRow({ item, onPress }: { item: MediaItem; onPress: () => void }) {
+  const { isDark } = useTheme();
+  const theme = isDark ? Colors.dark : Colors.light;
+
+  return (
+    <TouchableOpacity
+      style={[styles.minimalRow, { borderBottomColor: theme.border }]}
+      onPress={onPress}
+      accessibilityLabel={item.title}
+    >
+      <View style={[styles.coverWrap, { borderColor: theme.border }]}>
+        <Image
+          source={{ uri: item.coverUrl || undefined }}
+          style={styles.cover}
+          contentFit="cover"
+        />
+      </View>
+      <View style={styles.meta}>
+        <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
           {item.subtitle || item.type.toUpperCase()}
         </Text>
       </View>
@@ -97,45 +128,52 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── In Progress Grid ── */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Currently Enjoying</Text>
+        {/* ── In Progress Carousel ── */}
+        <View style={styles.carouselSection}>
+          <Text style={[styles.sectionHeading, { color: theme.textPrimary, paddingHorizontal: Spacing.md }]}>Currently Enjoying</Text>
           
           {inProgress.length > 0 ? (
-            <View style={styles.gridContainer}>
-              {inProgress.map((item) => (
-                <View key={item.id} style={styles.gridItemWrapper}>
-                  <MinimalGridCard
-                    item={item}
-                    onPress={() => router.push(`/media/${item.id}`)}
-                  />
-                </View>
-              ))}
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={[styles.emptyCard, { borderColor: theme.border }]}
-              onPress={() => setSheetVisible(true)}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={styles.carouselContainer}
+              snapToInterval={140 + Spacing.md}
+              decelerationRate="fast"
             >
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Start something new
-              </Text>
-            </TouchableOpacity>
+              {inProgress.map((item) => (
+                <MinimalGridCard
+                  key={item.id}
+                  item={item}
+                  onPress={() => router.push(`/media/${item.id}`)}
+                  style={styles.carouselItem}
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={{ paddingHorizontal: Spacing.md }}>
+              <TouchableOpacity
+                style={[styles.emptyCard, { borderColor: theme.border }]}
+                onPress={() => setSheetVisible(true)}
+              >
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                  Start something new
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
-        {/* ── Recently Added Grid ── */}
+        {/* ── Recently Added List ── */}
         {recentlyAdded.length > 0 && (
-          <View style={styles.section}>
+          <View style={styles.listSection}>
             <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Recently Added</Text>
-            <View style={styles.gridContainer}>
+            <View style={styles.listContainer}>
               {recentlyAdded.map((item) => (
-                <View key={item.id} style={styles.gridItemWrapper}>
-                  <MinimalGridCard
-                    item={item}
-                    onPress={() => router.push(`/media/${item.id}`)}
-                  />
-                </View>
+                <MinimalRow
+                  key={item.id}
+                  item={item}
+                  onPress={() => router.push(`/media/${item.id}`)}
+                />
               ))}
             </View>
           </View>
@@ -166,7 +204,8 @@ const styles = StyleSheet.create({
   },
 
   // Sections
-  section: { marginBottom: 40, paddingHorizontal: Spacing.md },
+  carouselSection: { marginBottom: 40 },
+  listSection: { paddingHorizontal: Spacing.md },
   sectionHeading: {
     fontFamily: Typography.fontFamily.primaryMedium,
     fontSize: Typography.sizes.body,
@@ -174,17 +213,16 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 
-  // Grid
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  // Carousel
+  carouselContainer: {
+    paddingHorizontal: Spacing.md,
     gap: Spacing.md,
-    justifyContent: 'space-between',
   },
-  gridItemWrapper: {
-    width: (SCREEN_W - Spacing.md * 3) / 2, // 2 column grid
-    marginBottom: Spacing.sm,
+  carouselItem: {
+    width: 140,
   },
+
+  // Grid Card Styles (used in carousel)
   gridCard: {
     width: '100%',
   },
@@ -205,6 +243,29 @@ const styles = StyleSheet.create({
   gridSubtitle: {
     fontFamily: Typography.fontFamily.primary,
     fontSize: Typography.sizes.caption,
+  },
+
+  // List Styles
+  listContainer: {
+    gap: Spacing.xs,
+  },
+  minimalRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  coverWrap: {
+    width: 48, height: 72, borderRadius: 4,
+    overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth,
+  },
+  cover: { width: '100%', height: '100%' },
+  meta: { flex: 1, gap: 4, justifyContent: 'center' },
+  title: {
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: Typography.sizes.body,
+  },
+  subtitle: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.bodySmall,
   },
 
   // Empty state
