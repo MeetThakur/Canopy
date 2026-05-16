@@ -18,30 +18,30 @@ import { MediaItem } from '../../types/media';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-// ─── Calm Minimal Row ────────────────────────────────────────────────────────
+// ─── Calm Minimal Grid Card ──────────────────────────────────────────────────
 
-function MinimalRow({ item, onPress }: { item: MediaItem; onPress: () => void }) {
+function MinimalGridCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
 
   return (
     <TouchableOpacity
-      style={[styles.minimalRow, { borderBottomColor: theme.border }]}
+      style={styles.gridCard}
       onPress={onPress}
       accessibilityLabel={item.title}
     >
-      <View style={[styles.coverWrap, { borderColor: theme.border }]}>
+      <View style={[styles.gridCoverWrap, { borderColor: theme.border }]}>
         <Image
           source={{ uri: item.coverUrl || undefined }}
-          style={styles.cover}
+          style={styles.gridCover}
           contentFit="cover"
         />
       </View>
-      <View style={styles.meta}>
-        <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
+      <View style={styles.gridMeta}>
+        <Text style={[styles.gridTitle, { color: theme.textPrimary }]} numberOfLines={1}>
           {item.title}
         </Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
+        <Text style={[styles.gridSubtitle, { color: theme.textSecondary }]} numberOfLines={1}>
           {item.subtitle || item.type.toUpperCase()}
         </Text>
       </View>
@@ -97,18 +97,19 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── In Progress List ── */}
+        {/* ── In Progress Grid ── */}
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Currently Enjoying</Text>
           
           {inProgress.length > 0 ? (
-            <View style={styles.listContainer}>
+            <View style={styles.gridContainer}>
               {inProgress.map((item) => (
-                <MinimalRow
-                  key={item.id}
-                  item={item}
-                  onPress={() => router.push(`/media/${item.id}`)}
-                />
+                <View key={item.id} style={styles.gridItemWrapper}>
+                  <MinimalGridCard
+                    item={item}
+                    onPress={() => router.push(`/media/${item.id}`)}
+                  />
+                </View>
               ))}
             </View>
           ) : (
@@ -123,17 +124,18 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* ── Recently Added ── */}
+        {/* ── Recently Added Grid ── */}
         {recentlyAdded.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Recently Added</Text>
-            <View style={styles.listContainer}>
+            <View style={styles.gridContainer}>
               {recentlyAdded.map((item) => (
-                <MinimalRow
-                  key={item.id}
-                  item={item}
-                  onPress={() => router.push(`/media/${item.id}`)}
-                />
+                <View key={item.id} style={styles.gridItemWrapper}>
+                  <MinimalGridCard
+                    item={item}
+                    onPress={() => router.push(`/media/${item.id}`)}
+                  />
+                </View>
               ))}
             </View>
           </View>
@@ -172,27 +174,37 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 
-  // List
-  listContainer: {
-    gap: Spacing.xs,
+  // Grid
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+    justifyContent: 'space-between',
   },
-  minimalRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
-    paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
+  gridItemWrapper: {
+    width: (SCREEN_W - Spacing.md * 3) / 2, // 2 column grid
+    marginBottom: Spacing.sm,
   },
-  coverWrap: {
-    width: 48, height: 72, borderRadius: 4,
-    overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth,
+  gridCard: {
+    width: '100%',
   },
-  cover: { width: '100%', height: '100%' },
-  meta: { flex: 1, gap: 4, justifyContent: 'center' },
-  title: {
+  gridCoverWrap: {
+    width: '100%',
+    aspectRatio: 2 / 3,
+    borderRadius: 4,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 8,
+  },
+  gridCover: { width: '100%', height: '100%' },
+  gridMeta: { gap: 2 },
+  gridTitle: {
     fontFamily: Typography.fontFamily.primaryMedium,
     fontSize: Typography.sizes.body,
   },
-  subtitle: {
+  gridSubtitle: {
     fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.bodySmall,
+    fontSize: Typography.sizes.caption,
   },
 
   // Empty state

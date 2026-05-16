@@ -1,6 +1,4 @@
-feat: calm ui, local search, and progress tracking
+style: change homepage to minimal grid
 
-- Installed `expo-haptics` for tactile feedback
-- Completely redesigned Homepage (`index.tsx`) to a calm, minimalist layout with gentle lists instead of massive blocks
-- Updated Library (`library.tsx`) with a refined header, local offline Search Bar, and A-Z/Newest/Best sorting options
-- Revamped Detail Screen (`[id].tsx`) to be stark and clean, integrating granular progress trackers (pages/episodes/hours) with haptic feedback
+- Replaced the simple list layout on the homepage with a 2-column minimal grid layout
+- Preserved the calm, whitespace-heavy aesthetic while displaying covers more prominently
