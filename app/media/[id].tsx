@@ -6,8 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import {
-  ChevronLeft, Trash2, Star, Calendar, Clock, BookOpen,
-  Tv, Gamepad2, Film, Users, Globe, Tag,
+  ChevronLeft, Trash2, Plus, Minus
 } from "lucide-react-native";
 import { format } from "date-fns";
 import { Colors } from "../../constants/colors";
@@ -18,6 +17,7 @@ import { useLibraryStore } from "../../stores/libraryStore";
 import { StarRating } from "../../components/ui/StarRating";
 import { AddMediaSheet } from "../../components/sheets/AddMediaSheet";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 
 const STATUS_OPTIONS = [
   { label: "Want", value: "want" as const },
@@ -25,176 +25,44 @@ const STATUS_OPTIONS = [
   { label: "Completed", value: "completed" as const },
 ];
 
-// ─── Reusable sub-components ────────────────────────────────────────────────
+// ─── Progress Tracker ────────────────────────────────────────────────────────
 
-function MetaChip({ label, value, accent }: { label: string; value: string | number; accent?: string }) {
+function ProgressTracker({ 
+  label, 
+  current, 
+  total, 
+  onIncrement, 
+  onDecrement 
+}: { 
+  label: string; 
+  current: number; 
+  total?: number; 
+  onIncrement: () => void; 
+  onDecrement: () => void;
+}) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
+
   return (
-    <View style={[chipStyles.chip, { backgroundColor: theme.surface2 }]}>
-      <Text style={[chipStyles.label, { color: theme.textTertiary }]}>{label}</Text>
-      <Text style={[chipStyles.value, { color: accent ?? theme.textPrimary }]} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-const chipStyles = StyleSheet.create({
-  chip: { borderRadius: BorderRadius.sm, paddingHorizontal: 14, paddingVertical: 10, marginRight: 8, marginBottom: 8 },
-  label: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.micro, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 },
-  value: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall },
-});
-
-function SectionHeader({ title }: { title: string }) {
-  const { isDark } = useTheme();
-  const theme = isDark ? Colors.dark : Colors.light;
-  return (
-    <Text style={[secStyles.header, { color: theme.textTertiary }]}>{title}</Text>
-  );
-}
-const secStyles = StyleSheet.create({
-  header: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.caption, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
-});
-
-function GenrePills({ genres, accent }: { genres: string[]; accent: string }) {
-  const { isDark } = useTheme();
-  const theme = isDark ? Colors.dark : Colors.light;
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-      {genres.map((g) => (
-        <View key={g} style={[{ backgroundColor: accent + "15", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 }]}>
-          <Text style={{ fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall, color: accent }}>{g}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-// ─── Type-specific info panels ────────────────────────────────────────────────
-
-function BookInfo({ item }: { item: any }) {
-  const { isDark } = useTheme();
-  const theme = isDark ? Colors.dark : Colors.light;
-  return (
-    <View style={styles.infoPanel}>
-      <View style={styles.chipRow}>
-        {item.pages && <MetaChip label="Pages" value={item.pages} />}
-        {item.pagesRead ? <MetaChip label="Read" value={`${item.pagesRead} / ${item.pages ?? "?"}`} accent={theme.accentBooks} /> : null}
-        {item.year && <MetaChip label="Year" value={item.year} />}
-        {item.language && <MetaChip label="Language" value={item.language.toUpperCase()} />}
-        {item.publisher && <MetaChip label="Publisher" value={item.publisher} />}
+    <View style={styles.progressContainer}>
+      <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>{label}</Text>
+      <View style={styles.progressControls}>
+        <TouchableOpacity 
+          style={[styles.progressBtn, { borderColor: theme.border }]} 
+          onPress={onDecrement}
+        >
+          <Minus size={16} color={theme.textPrimary} />
+        </TouchableOpacity>
+        <Text style={[styles.progressValue, { color: theme.textPrimary }]}>
+          {current} {total ? <Text style={{ color: theme.textTertiary }}>/ {total}</Text> : null}
+        </Text>
+        <TouchableOpacity 
+          style={[styles.progressBtn, { borderColor: theme.border }]} 
+          onPress={onIncrement}
+        >
+          <Plus size={16} color={theme.textPrimary} />
+        </TouchableOpacity>
       </View>
-      {item.genre?.length > 0 && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Genres" />
-          <GenrePills genres={item.genre} accent={theme.accentBooks} />
-        </View>
-      )}
-    </View>
-  );
-}
-
-function MovieInfo({ item }: { item: any }) {
-  const { isDark } = useTheme();
-  const theme = isDark ? Colors.dark : Colors.light;
-  return (
-    <View style={styles.infoPanel}>
-      <View style={styles.chipRow}>
-        {item.runtime && <MetaChip label="Runtime" value={`${item.runtime} min`} />}
-        {item.releaseDate && <MetaChip label="Released" value={item.releaseDate} />}
-        {item.language && <MetaChip label="Language" value={item.language.toUpperCase()} />}
-      </View>
-      {item.director && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Director" />
-          <Text style={{ fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.body, color: theme.textPrimary }}>{item.director}</Text>
-        </View>
-      )}
-      {item.cast?.length > 0 && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Cast" />
-          <Text style={{ fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.body, color: theme.textSecondary, lineHeight: 22 }}>
-            {item.cast.join(" · ")}
-          </Text>
-        </View>
-      )}
-      {item.genre?.length > 0 && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Genres" />
-          <GenrePills genres={item.genre} accent={theme.accentMovies} />
-        </View>
-      )}
-    </View>
-  );
-}
-
-function TVInfo({ item }: { item: any }) {
-  const { isDark } = useTheme();
-  const theme = isDark ? Colors.dark : Colors.light;
-  return (
-    <View style={styles.infoPanel}>
-      <View style={styles.chipRow}>
-        {item.seasons && <MetaChip label="Seasons" value={item.seasons} />}
-        {item.numberOfEpisodes && <MetaChip label="Episodes" value={item.numberOfEpisodes} />}
-        {item.episodesWatched ? <MetaChip label="Watched" value={item.episodesWatched} accent={theme.accentTV} /> : null}
-        {item.network && <MetaChip label="Network" value={item.network} />}
-        {item.status_tv && <MetaChip label="Status" value={item.status_tv} />}
-        {item.releaseDate && <MetaChip label="First Aired" value={item.releaseDate} />}
-        {item.language && <MetaChip label="Language" value={item.language.toUpperCase()} />}
-      </View>
-      {item.cast?.length > 0 && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Cast" />
-          <Text style={{ fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.body, color: theme.textSecondary, lineHeight: 22 }}>
-            {item.cast.join(" · ")}
-          </Text>
-        </View>
-      )}
-      {item.genre?.length > 0 && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Genres" />
-          <GenrePills genres={item.genre} accent={theme.accentTV} />
-        </View>
-      )}
-    </View>
-  );
-}
-
-function GameInfo({ item }: { item: any }) {
-  const { isDark } = useTheme();
-  const theme = isDark ? Colors.dark : Colors.light;
-  return (
-    <View style={styles.infoPanel}>
-      <View style={styles.chipRow}>
-        {item.hoursPlayed ? <MetaChip label="Hours Played" value={`${item.hoursPlayed}h`} accent={theme.accentGames} /> : null}
-        {item.releaseDate && <MetaChip label="Released" value={item.releaseDate} />}
-        {item.igdbRating && <MetaChip label="IGDB Rating" value={`${item.igdbRating}/10`} accent={theme.accentGames} />}
-      </View>
-      {item.platform && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Platforms" />
-          <Text style={{ fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.body, color: theme.textPrimary }}>
-            {item.platform}
-          </Text>
-        </View>
-      )}
-      {item.developer && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Developer" />
-          <Text style={{ fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.body, color: theme.textPrimary }}>
-            {item.developer}
-            {item.publisher_game && item.publisher_game !== item.developer
-              ? `  ·  ${item.publisher_game} (Publisher)` : ""}
-          </Text>
-        </View>
-      )}
-      {item.genre?.length > 0 && (
-        <View style={styles.subSection}>
-          <SectionHeader title="Genres" />
-          <GenrePills genres={item.genre} accent={theme.accentGames} />
-        </View>
-      )}
     </View>
   );
 }
@@ -210,10 +78,16 @@ export default function MediaDetailScreen() {
   const updateItem = useLibraryStore((s) => s.updateItem);
   const removeItem = useLibraryStore((s) => s.removeItem);
   const [editVisible, setEditVisible] = useState(false);
+
   const [optimisticStatus, setOptimisticStatus] = useState(item?.status);
   const [optimisticRating, setOptimisticRating] = useState(item?.rating ?? 0);
 
-  useEffect(() => { if (item) { setOptimisticStatus(item.status); setOptimisticRating(item.rating); } }, [item?.status, item?.rating]);
+  useEffect(() => { 
+    if (item) { 
+      setOptimisticStatus(item.status); 
+      setOptimisticRating(item.rating); 
+    } 
+  }, [item?.status, item?.rating]);
 
   if (!item) {
     return (
@@ -228,17 +102,10 @@ export default function MediaDetailScreen() {
     );
   }
 
-  const accentColor = {
-    book: theme.accentBooks,
-    movie: theme.accentMovies,
-    tv: theme.accentTV,
-    game: theme.accentGames,
-  }[item.type];
-
   const handleDelete = () => {
     Alert.alert("Remove Item", `Remove "${item.title}" from your library?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => { removeItem(id); router.back(); } },
+      { text: "Remove", style: "destructive", onPress: () => { removeItem(id as string); router.back(); } },
     ]);
   };
 
@@ -252,171 +119,260 @@ export default function MediaDetailScreen() {
   const handleStatusChange = (status: "want" | "inprogress" | "completed") => {
     if (optimisticStatus === status) return;
     setOptimisticStatus(status);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     requestAnimationFrame(() => updateItem(id as string, { status }));
   };
 
-  return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-      {/* Hero */}
-      <View style={styles.hero}>
-        {item.coverUrl ? (
-          <>
-            <Image source={{ uri: item.coverUrl }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={12} />
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.72)" }]} />
-          </>
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: accentColor + "30" }]} />
-        )}
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back">
-          <ChevronLeft size={22} color="#FFF" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setEditVisible(true)} style={styles.editBtn} accessibilityLabel="Edit item">
-          <Text style={styles.editBtnText}>Edit</Text>
-        </TouchableOpacity>
+  const handleProgressUpdate = (field: 'pagesRead' | 'episodesWatched' | 'hoursPlayed', increment: boolean) => {
+    const currentVal = (item as any)[field] || 0;
+    const newVal = Math.max(0, increment ? currentVal + 1 : currentVal - 1);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    updateItem(id as string, { [field]: newVal });
+  };
 
-        <View style={styles.heroContent}>
-          <Image source={{ uri: item.coverUrl || undefined }} style={styles.cover} contentFit="cover" transition={0} />
-          <View style={styles.heroMeta}>
-            <View style={[styles.typeBadge, { backgroundColor: accentColor + "20", borderColor: accentColor + "40" }]}>
-              <Text style={[styles.typeBadgeText, { color: accentColor }]}>
-                {item.type === "book" ? "Book" : item.type === "movie" ? "Film" : item.type === "tv" ? "TV Show" : "Game"}
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces={false}>
+        
+        {/* Stark Hero Cover */}
+        <View style={styles.heroCoverWrap}>
+          {item.coverUrl ? (
+            <Image 
+              source={{ uri: item.coverUrl }} 
+              style={StyleSheet.absoluteFill} 
+              contentFit="cover" 
+            />
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.surface2 }]} />
+          )}
+          <LinearGradient
+            colors={['transparent', theme.background]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 0, y: 1 }}
+          />
+          <SafeAreaView style={styles.heroHeaderSafe}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back">
+              <ChevronLeft size={24} color="#FFF" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setEditVisible(true)} style={styles.editBtn} accessibilityLabel="Edit item">
+              <Text style={styles.editBtnText}>Edit</Text>
+            </TouchableOpacity>
+          </SafeAreaView>
+        </View>
+
+        {/* Content Area */}
+        <View style={styles.contentArea}>
+          
+          <Text style={[styles.typeText, { color: theme.textSecondary }]}>
+            {item.type.toUpperCase()}
+          </Text>
+          
+          <Text style={[styles.title, { color: theme.textPrimary }]}>
+            {item.title}
+          </Text>
+          
+          {item.subtitle ? (
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+              {item.subtitle}
+            </Text>
+          ) : null}
+
+          <View style={styles.ratingWrap}>
+            <StarRating rating={optimisticRating} size={24} onRate={handleRate} editable />
+          </View>
+
+          {/* Status Selection */}
+          <View style={styles.statusRow}>
+            {STATUS_OPTIONS.map((opt) => {
+              const active = optimisticStatus === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  onPress={() => handleStatusChange(opt.value)}
+                  style={[
+                    styles.statusPill,
+                    {
+                      borderColor: active ? theme.textPrimary : theme.border,
+                      backgroundColor: active ? theme.textPrimary : 'transparent',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.statusPillText, { color: active ? theme.background : theme.textSecondary }]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Progress Tracking */}
+          {item.status === 'inprogress' && (
+            <View style={[styles.section, { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 24 }]}>
+              {item.type === 'book' && (
+                <ProgressTracker 
+                  label="Pages Read" 
+                  current={item.pagesRead || 0} 
+                  total={item.pages}
+                  onIncrement={() => handleProgressUpdate('pagesRead', true)}
+                  onDecrement={() => handleProgressUpdate('pagesRead', false)}
+                />
+              )}
+              {item.type === 'tv' && (
+                <ProgressTracker 
+                  label="Episodes Watched" 
+                  current={item.episodesWatched || 0} 
+                  total={item.numberOfEpisodes}
+                  onIncrement={() => handleProgressUpdate('episodesWatched', true)}
+                  onDecrement={() => handleProgressUpdate('episodesWatched', false)}
+                />
+              )}
+              {item.type === 'game' && (
+                <ProgressTracker 
+                  label="Hours Played" 
+                  current={item.hoursPlayed || 0} 
+                  onIncrement={() => handleProgressUpdate('hoursPlayed', true)}
+                  onDecrement={() => handleProgressUpdate('hoursPlayed', false)}
+                />
+              )}
+            </View>
+          )}
+
+          {/* Description */}
+          {item.description ? (
+            <View style={styles.section}>
+              <Text style={[styles.bodyText, { color: theme.textSecondary }]}>
+                {item.description}
               </Text>
             </View>
-            <Text style={styles.heroTitle} numberOfLines={3}>{item.title}</Text>
-            {item.subtitle ? <Text style={styles.heroSubtitle} numberOfLines={1}>{item.subtitle}</Text> : null}
-            {item.year ? <Text style={styles.heroYear}>{item.year}</Text> : null}
-            <StarRating rating={optimisticRating} size={20} onRate={handleRate} editable />
+          ) : null}
+
+          {/* Minimal Meta info */}
+          <View style={[styles.section, { gap: 12 }]}>
+            {item.year && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Released: <Text style={{ color: theme.textPrimary }}>{item.year}</Text></Text>}
+            {item.genre && item.genre.length > 0 && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Genre: <Text style={{ color: theme.textPrimary }}>{item.genre.join(', ')}</Text></Text>}
+            {item.createdAt && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Added to Library: <Text style={{ color: theme.textPrimary }}>{format(new Date(item.createdAt), "MMM d, yyyy")}</Text></Text>}
           </View>
-        </View>
-      </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Status */}
-        <View style={styles.statusRow}>
-          {STATUS_OPTIONS.map((opt) => {
-            const active = optimisticStatus === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                onPress={() => handleStatusChange(opt.value)}
-                style={[
-                  styles.statusBtn,
-                  {
-                    backgroundColor: active ? accentColor : theme.surface2,
-                    borderColor: active ? accentColor : theme.border,
-                  },
-                ]}
-                accessibilityLabel={`Set status to ${opt.label}`}
-              >
-                <Text style={[styles.statusBtnText, { color: active ? "#FFF" : theme.textSecondary }]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Description */}
-        {item.description ? (
-          <View style={styles.section}>
-            <SectionHeader title={item.type === "book" ? "Synopsis" : item.type === "game" ? "About" : "Overview"} />
-            <Text style={[styles.bodyText, { color: theme.textPrimary }]}>{item.description}</Text>
-          </View>
-        ) : null}
-
-        {/* Type-specific info */}
-        <View style={styles.section}>
-          <SectionHeader title="Details" />
-          {item.type === "book" && <BookInfo item={item} />}
-          {item.type === "movie" && <MovieInfo item={item} />}
-          {item.type === "tv" && <TVInfo item={item} />}
-          {item.type === "game" && <GameInfo item={item} />}
-        </View>
-
-        {/* Tracking dates */}
-        {(item.startDate || item.endDate || item.createdAt) && (
-          <View style={styles.section}>
-            <SectionHeader title="Your Timeline" />
-            <View style={styles.chipRow}>
-              <MetaChip label="Added" value={format(new Date(item.createdAt), "MMM d, yyyy")} />
-              {item.startDate && <MetaChip label="Started" value={format(new Date(item.startDate), "MMM d, yyyy")} />}
-              {item.endDate && <MetaChip label="Finished" value={format(new Date(item.endDate), "MMM d, yyyy")} accent={theme.success} />}
+          {/* Notes */}
+          {item.notes ? (
+            <View style={styles.section}>
+              <Text style={[styles.notesHeading, { color: theme.textPrimary }]}>Personal Notes</Text>
+              <Text style={[styles.bodyText, { color: theme.textSecondary }]}>{item.notes}</Text>
             </View>
-          </View>
-        )}
+          ) : null}
 
-        {/* Notes */}
-        {item.notes ? (
-          <View style={styles.section}>
-            <SectionHeader title="Your Notes" />
-            <View style={[styles.notesCard, { backgroundColor: theme.surface2 }]}>
-              <Text style={[styles.bodyText, { color: theme.textPrimary }]}>{item.notes}</Text>
-            </View>
-          </View>
-        ) : null}
-
-        {/* Delete */}
-        <TouchableOpacity
-          style={[styles.deleteBtn, { borderColor: theme.destructive + "40" }]}
-          onPress={handleDelete}
-          accessibilityLabel="Remove from library"
-        >
-          <Trash2 size={16} color={theme.destructive} />
-          <Text style={[styles.deleteBtnText, { color: theme.destructive }]}>Remove from Library</Text>
-        </TouchableOpacity>
+          {/* Delete */}
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={handleDelete}
+          >
+            <Text style={[styles.deleteBtnText, { color: theme.destructive }]}>Remove from Collection</Text>
+          </TouchableOpacity>
+          
+        </View>
       </ScrollView>
 
       <AddMediaSheet
         visible={editVisible}
         onClose={() => setEditVisible(false)}
-        editId={id}
+        editId={id as string}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   safe: { flex: 1 },
-  hero: { paddingTop: 80, paddingBottom: 24, justifyContent: "flex-end" },
+  scroll: { paddingBottom: 100 },
+  
+  // Hero
+  heroCoverWrap: {
+    width: '100%',
+    aspectRatio: 3 / 4,
+  },
+  heroHeaderSafe: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingTop: 10,
+  },
   backBtn: {
-    position: "absolute", top: Spacing.md, left: Spacing.md, zIndex: 10,
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "center", alignItems: "center",
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center',
   },
-  backBtnAlt: { margin: Spacing.md, width: 40, height: 40, justifyContent: "center" },
+  backBtnAlt: { margin: Spacing.md, width: 40, height: 40, justifyContent: 'center' },
   editBtn: {
-    position: "absolute", top: Spacing.md, right: Spacing.md, zIndex: 10,
-    backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: 20, justifyContent: 'center', alignItems: 'center',
   },
-  editBtnText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall, color: "#FFF" },
-  heroContent: { flexDirection: "row", gap: Spacing.md, paddingHorizontal: Spacing.lg, alignItems: "flex-end" },
-  cover: {
-    width: 100, height: 150, borderRadius: BorderRadius.md,
-    backgroundColor: "#2E2C2A",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 12,
+  editBtnText: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall, color: "#FFF" },
+  
+  // Content
+  contentArea: {
+    paddingHorizontal: Spacing.xl,
+    marginTop: -40, // Pull up over gradient
   },
-  heroMeta: { flex: 1, gap: 6, paddingBottom: 4 },
-  typeBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, borderWidth: 1, marginBottom: 2 },
-  typeBadgeText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.caption },
-  heroTitle: { fontFamily: Typography.fontFamily.heading, fontSize: Typography.sizes.h1, color: "#FFF", lineHeight: 28 },
-  heroSubtitle: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall, color: "rgba(255,255,255,0.8)" },
-  heroYear: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.caption, color: "rgba(255,255,255,0.55)" },
-  scroll: { padding: Spacing.lg, gap: Spacing.xl, paddingBottom: 100 },
-  statusRow: { flexDirection: "row", gap: 8 },
-  statusBtn: { flex: 1, paddingVertical: 10, borderRadius: BorderRadius.sm, borderWidth: 1, alignItems: "center" },
-  statusBtnText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall },
-  section: { gap: 0 },
-  infoPanel: {},
-  chipRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 4 },
-  subSection: { marginTop: 14 },
+  typeText: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.caption,
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  title: {
+    fontFamily: Typography.fontFamily.heading,
+    fontSize: 36,
+    lineHeight: 40,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: Typography.sizes.body,
+    marginBottom: 20,
+  },
+  ratingWrap: {
+    marginBottom: 24,
+  },
+  
+  // Status
+  statusRow: { flexDirection: "row", gap: 8, marginBottom: 24 },
+  statusPill: { 
+    paddingVertical: 10, paddingHorizontal: 16, 
+    borderRadius: 24, borderWidth: 1, 
+  },
+  statusPillText: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall },
+  
+  // Sections
+  section: { marginBottom: 32 },
   bodyText: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.body, lineHeight: 24 },
-  notesCard: { borderRadius: BorderRadius.sm, padding: Spacing.md },
+  metaText: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall },
+  notesHeading: { fontFamily: Typography.fontFamily.primaryBold, fontSize: Typography.sizes.bodySmall, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+  
   deleteBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    paddingVertical: 12, borderRadius: BorderRadius.sm, borderWidth: 1,
+    alignItems: "flex-start",
+    paddingVertical: 12, marginTop: 40,
   },
-  deleteBtnText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.body },
+  deleteBtnText: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.body },
+
+  // Progress Tracker
+  progressContainer: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  },
+  progressLabel: {
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: Typography.sizes.body,
+  },
+  progressControls: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+  },
+  progressBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    borderWidth: 1, justifyContent: 'center', alignItems: 'center',
+  },
+  progressValue: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: Typography.sizes.h2,
+    minWidth: 40, textAlign: 'center',
+  },
 });

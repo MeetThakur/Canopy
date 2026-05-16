@@ -8,10 +8,11 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
-import { LayoutGrid, List, Plus } from "lucide-react-native";
+import { LayoutGrid, List, Plus, Search, ArrowDownAZ } from "lucide-react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Colors } from "../../constants/colors";
@@ -46,12 +47,14 @@ const STATUS_FILTERS: { label: string; value: "all" | Status }[] = [
   { label: "Completed", value: "completed" },
 ];
 
+type SortMode = 'newest' | 'alphabetical' | 'rating';
+
 function GridCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   return (
     <TouchableOpacity style={styles.gridCard} onPress={onPress} accessibilityLabel={item.title}>
-      <View style={[styles.gridCoverContainer, { borderColor: theme.border, borderWidth: 1 }]}>
+      <View style={[styles.gridCoverContainer, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
         <Image source={{ uri: item.coverUrl || undefined }} style={styles.gridCover} contentFit="cover" transition={200} />
       </View>
       <Text style={[styles.gridTitle, { color: theme.textPrimary }]} numberOfLines={2}>
@@ -68,58 +71,100 @@ export default function LibraryScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
 
   const itemsMap = useLibraryStore((s) => s.items);
-  const order = useLibraryStore((s) => s.order);
-
-  const orderedItems = useMemo(() => {
-    const listed: MediaItem[] = [];
-    const seen = new Set<string>();
-    for (const id of order) {
-      if (itemsMap[id]) { listed.push(itemsMap[id]); seen.add(id); }
-    }
-    for (const item of Object.values(itemsMap)) {
-      if (!seen.has(item.id)) listed.push(item);
-    }
-    return listed;
-  }, [itemsMap, order]);
 
   const [activeCategory, setActiveCategory] = useState<"all" | MediaType>("all");
   const [activeStatus, setActiveStatus] = useState<"all" | Status>("all");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState<SortMode>('newest');
 
-  const filtered = useMemo(
-    () => orderedItems.filter((item) => {
-      if (activeCategory !== "all" && item.type !== activeCategory) return false;
-      if (activeStatus !== "all" && item.status !== activeStatus) return false;
-      return true;
-    }),
-    [orderedItems, activeCategory, activeStatus]
-  );
+  const filteredAndSorted = useMemo(() => {
+    let result = Object.values(itemsMap);
+
+    // Filter by Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(item => 
+        item.title.toLowerCase().includes(q) || 
+        (item.subtitle && item.subtitle.toLowerCase().includes(q))
+      );
+    }
+
+    // Filter by Category
+    if (activeCategory !== "all") {
+      result = result.filter(item => item.type === activeCategory);
+    }
+
+    // Filter by Status
+    if (activeStatus !== "all") {
+      result = result.filter(item => item.status === activeStatus);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortMode === 'newest') {
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      } else if (sortMode === 'alphabetical') {
+        return a.title.localeCompare(b.title);
+      } else if (sortMode === 'rating') {
+        return (b.rating || 0) - (a.rating || 0);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [itemsMap, activeCategory, activeStatus, searchQuery, sortMode]);
 
   const toggleView = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setViewMode((v) => (v === "list" ? "grid" : "list"));
   };
 
+  const cycleSortMode = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const modes: SortMode[] = ['newest', 'alphabetical', 'rating'];
+    const nextIndex = (modes.indexOf(sortMode) + 1) % modes.length;
+    setSortMode(modes[nextIndex]);
+  };
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-      {/* Huge Header */}
+      {/* Calm Header */}
       <View style={styles.headerRow}>
-        <View style={styles.headerTextWrap}>
-          <Text style={[styles.pageTitleHuge, { color: theme.textPrimary }]}>
-            My Library
-          </Text>
+        <Text style={[styles.pageTitleCalm, { color: theme.textPrimary }]}>
+          library.
+        </Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={cycleSortMode} style={styles.iconBtn}>
+            <ArrowDownAZ size={20} color={theme.textPrimary} />
+            <Text style={[styles.sortLabel, { color: theme.textSecondary }]}>
+              {sortMode === 'newest' ? 'New' : sortMode === 'alphabetical' ? 'A-Z' : 'Best'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={toggleView} style={styles.iconBtn}>
+            {viewMode === "list" ? (
+              <LayoutGrid size={20} color={theme.textPrimary} />
+            ) : (
+              <List size={20} color={theme.textPrimary} />
+            )}
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          onPress={toggleView}
-          style={[styles.iconBtn, { borderColor: theme.border, borderWidth: 1 }]}
-          accessibilityLabel="Toggle view mode"
-        >
-          {viewMode === "list" ? (
-            <LayoutGrid size={20} color={theme.textPrimary} />
-          ) : (
-            <List size={20} color={theme.textPrimary} />
-          )}
-        </TouchableOpacity>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>
+          <Search size={18} color={theme.textTertiary} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.textPrimary }]}
+            placeholder="Search your collection..."
+            placeholderTextColor={theme.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            clearButtonMode="while-editing"
+          />
+        </View>
       </View>
 
       {/* Category tabs */}
@@ -138,7 +183,6 @@ export default function LibraryScreen() {
                     backgroundColor: active ? theme.textPrimary : 'transparent'
                   }
                 ]}
-                accessibilityLabel={`Filter by ${tab.label}`}
               >
                 <Text style={[
                   styles.pillOutlineText,
@@ -168,7 +212,6 @@ export default function LibraryScreen() {
                     backgroundColor: active ? theme.textPrimary : 'transparent'
                   }
                 ]}
-                accessibilityLabel={`Filter by ${f.label}`}
               >
                 <Text style={[
                   styles.pillOutlineText,
@@ -182,18 +225,18 @@ export default function LibraryScreen() {
         </ScrollView>
       </View>
 
-      {/* Content - wrapped in flex: 1 to prevent layout collapse */}
+      {/* Content */}
       <View style={{ flex: 1, marginTop: Spacing.sm }}>
-        {filtered.length === 0 ? (
+        {filteredAndSorted.length === 0 ? (
           <EmptyState
-            title="Nothing here yet"
-            description="Start building your collection."
-            actionLabel="Add Item"
-            onAction={() => setSheetVisible(true)}
+            title={searchQuery ? "No results found" : "Nothing here yet"}
+            description={searchQuery ? "Try a different search term." : "Start building your collection."}
+            actionLabel={searchQuery ? "Clear Search" : "Add Item"}
+            onAction={() => searchQuery ? setSearchQuery('') : setSheetVisible(true)}
           />
         ) : viewMode === "list" ? (
           <FlashList
-            data={filtered}
+            data={filteredAndSorted}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <MediaRow
@@ -207,7 +250,7 @@ export default function LibraryScreen() {
           />
         ) : (
           <FlashList
-            data={filtered}
+            data={filteredAndSorted}
             keyExtractor={(item) => item.id}
             numColumns={3}
             renderItem={({ item }) => (
@@ -237,45 +280,66 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   headerRow: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start",
-    paddingHorizontal: Spacing.md, paddingTop: 16, paddingBottom: Spacing.md,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: Spacing.md, paddingTop: 16, paddingBottom: 10,
   },
-  headerTextWrap: {
-    flex: 1,
+  pageTitleCalm: { 
+    fontFamily: Typography.fontFamily.primaryBold, 
+    fontSize: 24,
+    letterSpacing: -0.5,
   },
-  countHuge: {
-    fontFamily: Typography.fontFamily.heading,
-    fontSize: 54,
-    lineHeight: 56,
-  },
-  pageTitleHuge: { 
-    fontFamily: Typography.fontFamily.heading, 
-    fontSize: 42,
-    lineHeight: 46,
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
   },
   iconBtn: { 
-    width: 44, height: 44, borderRadius: 22, 
-    justifyContent: "center", alignItems: "center" 
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: 4,
   },
-  tabsRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingBottom: Spacing.xs },
+  sortLabel: {
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: Typography.sizes.caption,
+  },
+  searchContainer: {
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    height: 44,
+    borderRadius: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.body,
+    height: '100%',
+  },
+  tabsRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingBottom: Spacing.sm },
   pillRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingBottom: Spacing.sm },
   pillOutline: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 24,
-    borderWidth: 1,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   pillOutlineText: {
-    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontFamily: Typography.fontFamily.primaryMedium,
     fontSize: Typography.sizes.bodySmall,
   },
   gridCard: { marginBottom: Spacing.sm },
   gridCoverContainer: {
-    height: 150, width: "100%", borderRadius: BorderRadius.md,
+    height: 140, width: "100%", borderRadius: 6,
     overflow: "hidden", backgroundColor: "transparent", marginBottom: Spacing.xs,
   },
   gridCover: { width: "100%", height: "100%" },
-  gridTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: 12 },
+  gridTitle: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: 12 },
   fab: {
     position: "absolute", bottom: 24, right: 20,
     width: 56, height: 56, borderRadius: 28,
