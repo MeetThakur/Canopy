@@ -1,6 +1,0 @@
-feat: image picker for covers and homepage layout tweak
-
-- Added `expo-image-picker` to allow users to select an image from their gallery for media covers
-- Integrated an image picker button into the `AddMediaSheet` next to the Cover URL field
-- Updated `app.json` with `expo-image-picker` plugin config
-- Tweaked Homepage (`index.tsx`): "Currently Enjoying" is now a horizontal scrolling carousel of grid cards, while "Recently Added" is a minimal list layout
