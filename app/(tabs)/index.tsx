@@ -237,14 +237,11 @@ const styles = StyleSheet.create({
   },
   gridCoverWrap: {
     width: '100%',
-    aspectRatio: 2 / 3,
+    height: 210,
     borderRadius: BorderRadius.md,
     overflow: 'hidden',
     marginBottom: 12,
-    ...Platform.select({
-      ios: { shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 10 },
-      android: { elevation: 4 },
-    }),
+    borderWidth: StyleSheet.hairlineWidth,
   },
   gridCover: { width: '100%', height: '100%' },
   gridMeta: { gap: 4, paddingHorizontal: 4 },

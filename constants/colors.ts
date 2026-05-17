@@ -3,19 +3,19 @@
 
 export const Colors = {
   light: {
-    background: '#F9FAFB', // modern cool gray
-    surface: '#FFFFFF',
-    surface2: '#F3F4F6',
+    background: '#F0F2F5', // soft grey for background
+    surface: '#FFFFFF',    // pure white for cards
+    surface2: '#E5E7EB',   // slightly darker grey for hover/accents
     textPrimary: '#111827',
     textSecondary: '#4B5563',
     textTertiary: '#9CA3AF',
-    border: '#E5E7EB',
-    accentBooks: '#3B82F6', // vibrant blue
-    accentMovies: '#8B5CF6', // purple
-    accentTV: '#F43F5E', // rose
-    accentGames: '#10B981', // emerald
+    border: '#D1D5DB',
+    accentBooks: '#2563EB',
+    accentMovies: '#7C3AED',
+    accentTV: '#E11D48',
+    accentGames: '#059669',
     success: '#16A34A',
-    destructive: '#EF4444',
+    destructive: '#DC2626',
   },
   dark: {
     background: '#0F1115', // midnight blue/black

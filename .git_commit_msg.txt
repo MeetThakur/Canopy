@@ -1,0 +1,5 @@
+style: refine modern layout and fix cover display
+
+- Darkened the light mode background (`#F0F2F5`) to reduce glare and increase contrast with pure white cards
+- Fixed covers not displaying in the homepage grid by replacing `aspectRatio` with a fixed height and removing conflicting shadow props on `overflow: hidden` views
+- Updated `MinimalRow` to display actionable status text (e.g. "Currently Enjoying", "Completed") instead of generic media types
