@@ -3,34 +3,32 @@
 
 export const Colors = {
   light: {
-    background: '#FFFFFF',
-    surface: '#F5F5F5',
-    surface2: '#EBEBEB',
-    textPrimary: '#000000',
-    textSecondary: '#555555',
-    textTertiary: '#999999',
-    border: '#E0E0E0',
-    accent: '#000000',
-    accentBooks: '#C05621',
-    accentMovies: '#2563EB',
-    accentTV: '#0891B2',
-    accentGames: '#059669',
+    background: '#F9FAFB', // modern cool gray
+    surface: '#FFFFFF',
+    surface2: '#F3F4F6',
+    textPrimary: '#111827',
+    textSecondary: '#4B5563',
+    textTertiary: '#9CA3AF',
+    border: '#E5E7EB',
+    accentBooks: '#3B82F6', // vibrant blue
+    accentMovies: '#8B5CF6', // purple
+    accentTV: '#F43F5E', // rose
+    accentGames: '#10B981', // emerald
     success: '#16A34A',
-    destructive: '#DC2626',
+    destructive: '#EF4444',
   },
   dark: {
-    background: '#000000',
-    surface: '#111111',
-    surface2: '#1A1A1A',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#AAAAAA',
-    textTertiary: '#666666',
-    border: '#222222',
-    accent: '#FFFFFF',
-    accentBooks: '#FB923C',
-    accentMovies: '#60A5FA',
-    accentTV: '#22D3EE',
-    accentGames: '#34D399',
+    background: '#0F1115', // midnight blue/black
+    surface: '#1A1D24', // elevated dark surface
+    surface2: '#272A33', // higher elevation
+    textPrimary: '#F9FAFB',
+    textSecondary: '#9CA3AF',
+    textTertiary: '#6B7280',
+    border: '#374151',
+    accentBooks: '#60A5FA', // bright blue
+    accentMovies: '#A78BFA', // bright purple
+    accentTV: '#FB7185', // bright rose
+    accentGames: '#34D399', // bright emerald
     success: '#34D399',
     destructive: '#F87171',
   },

@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  RefreshControl, Dimensions,
+  RefreshControl, Dimensions, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,7 +18,7 @@ import { MediaItem } from '../../types/media';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-// ─── Calm Minimal Grid Card ──────────────────────────────────────────────────
+// ─── Modern Grid Card ────────────────────────────────────────────────────────
 
 function MinimalGridCard({ item, onPress, style }: { item: MediaItem; onPress: () => void; style?: any }) {
   const { isDark } = useTheme();
@@ -29,8 +29,9 @@ function MinimalGridCard({ item, onPress, style }: { item: MediaItem; onPress: (
       style={[styles.gridCard, style]}
       onPress={onPress}
       accessibilityLabel={item.title}
+      activeOpacity={0.8}
     >
-      <View style={[styles.gridCoverWrap, { borderColor: theme.border }]}>
+      <View style={[styles.gridCoverWrap, { backgroundColor: theme.surface2, shadowColor: '#000' }]}>
         <Image
           source={{ uri: item.coverUrl || undefined }}
           style={styles.gridCover}
@@ -49,7 +50,13 @@ function MinimalGridCard({ item, onPress, style }: { item: MediaItem; onPress: (
   );
 }
 
-// ─── Calm Minimal Row ────────────────────────────────────────────────────────
+// ─── Modern Row Card ─────────────────────────────────────────────────────────
+
+function getStatusText(status: string) {
+  if (status === 'completed') return 'Completed';
+  if (status === 'inprogress') return 'Currently Enjoying';
+  return 'Added to Planning';
+}
 
 function MinimalRow({ item, onPress }: { item: MediaItem; onPress: () => void }) {
   const { isDark } = useTheme();
@@ -57,11 +64,15 @@ function MinimalRow({ item, onPress }: { item: MediaItem; onPress: () => void })
 
   return (
     <TouchableOpacity
-      style={[styles.minimalRow, { borderBottomColor: theme.border }]}
+      style={[
+        styles.rowCard,
+        { backgroundColor: theme.surface, shadowColor: '#000' }
+      ]}
       onPress={onPress}
       accessibilityLabel={item.title}
+      activeOpacity={0.8}
     >
-      <View style={[styles.coverWrap, { borderColor: theme.border }]}>
+      <View style={[styles.coverWrap, { backgroundColor: theme.surface2 }]}>
         <Image
           source={{ uri: item.coverUrl || undefined }}
           style={styles.cover}
@@ -72,8 +83,8 @@ function MinimalRow({ item, onPress }: { item: MediaItem; onPress: () => void })
         <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
           {item.title}
         </Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
-          {item.subtitle || item.type.toUpperCase()}
+        <Text style={[styles.actionText, { color: theme.accentBooks }]} numberOfLines={1}>
+          • {getStatusText(item.status)}
         </Text>
       </View>
     </TouchableOpacity>
@@ -116,15 +127,15 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.textTertiary} />
         }
       >
-        {/* ── Calm Header ── */}
+        {/* ── Header ── */}
         <View style={styles.header}>
           <Text style={[styles.logo, { color: theme.textPrimary }]}>kanopi.</Text>
           <TouchableOpacity
-            style={styles.addBtn}
+            style={[styles.addBtn, { backgroundColor: theme.surface2 }]}
             onPress={() => setSheetVisible(true)}
             accessibilityLabel="Add new item"
           >
-            <Plus size={24} color={theme.textPrimary} strokeWidth={1.5} />
+            <Plus size={20} color={theme.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
         </View>
 
@@ -152,7 +163,7 @@ export default function HomeScreen() {
           ) : (
             <View style={{ paddingHorizontal: Spacing.md }}>
               <TouchableOpacity
-                style={[styles.emptyCard, { borderColor: theme.border }]}
+                style={[styles.emptyCard, { borderColor: theme.border, backgroundColor: theme.surface }]}
                 onPress={() => setSheetVisible(true)}
               >
                 <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
@@ -166,7 +177,7 @@ export default function HomeScreen() {
         {/* ── Recently Added List ── */}
         {recentlyAdded.length > 0 && (
           <View style={styles.listSection}>
-            <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Recently Added</Text>
+            <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Recently Updated</Text>
             <View style={styles.listContainer}>
               {recentlyAdded.map((item) => (
                 <MinimalRow
@@ -189,55 +200,56 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { paddingBottom: 100 },
 
-  // Header
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: Spacing.md, paddingTop: 20, paddingBottom: 40,
   },
   logo: {
     fontFamily: Typography.fontFamily.primaryBold,
-    fontSize: 24,
-    letterSpacing: -0.5,
+    fontSize: 28,
+    letterSpacing: -1,
   },
   addBtn: {
-    padding: Spacing.xs,
+    padding: 10,
+    borderRadius: BorderRadius.full,
   },
 
-  // Sections
   carouselSection: { marginBottom: 40 },
   listSection: { paddingHorizontal: Spacing.md },
   sectionHeading: {
-    fontFamily: Typography.fontFamily.primaryMedium,
+    fontFamily: Typography.fontFamily.primarySemiBold,
     fontSize: Typography.sizes.body,
     marginBottom: 20,
-    opacity: 0.6,
+    opacity: 0.8,
+    letterSpacing: 0.5,
   },
 
-  // Carousel
   carouselContainer: {
     paddingHorizontal: Spacing.md,
     gap: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
   carouselItem: {
     width: 140,
   },
-
-  // Grid Card Styles (used in carousel)
   gridCard: {
     width: '100%',
   },
   gridCoverWrap: {
     width: '100%',
     aspectRatio: 2 / 3,
-    borderRadius: 4,
+    borderRadius: BorderRadius.md,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 8,
+    marginBottom: 12,
+    ...Platform.select({
+      ios: { shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 10 },
+      android: { elevation: 4 },
+    }),
   },
   gridCover: { width: '100%', height: '100%' },
-  gridMeta: { gap: 2 },
+  gridMeta: { gap: 4, paddingHorizontal: 4 },
   gridTitle: {
-    fontFamily: Typography.fontFamily.primaryMedium,
+    fontFamily: Typography.fontFamily.primarySemiBold,
     fontSize: Typography.sizes.body,
   },
   gridSubtitle: {
@@ -245,33 +257,36 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.caption,
   },
 
-  // List Styles
   listContainer: {
-    gap: Spacing.xs,
+    gap: Spacing.md,
   },
-  minimalRow: {
+  rowCard: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
-    paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
+    padding: 12,
+    borderRadius: BorderRadius.md,
+    ...Platform.select({
+      ios: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 },
+      android: { elevation: 2 },
+    }),
   },
   coverWrap: {
-    width: 48, height: 72, borderRadius: 4,
-    overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth,
+    width: 56, height: 84, borderRadius: BorderRadius.sm,
+    overflow: 'hidden',
   },
   cover: { width: '100%', height: '100%' },
-  meta: { flex: 1, gap: 4, justifyContent: 'center' },
+  meta: { flex: 1, gap: 6, justifyContent: 'center' },
   title: {
-    fontFamily: Typography.fontFamily.primaryMedium,
+    fontFamily: Typography.fontFamily.primarySemiBold,
     fontSize: Typography.sizes.body,
   },
-  subtitle: {
-    fontFamily: Typography.fontFamily.primary,
-    fontSize: Typography.sizes.bodySmall,
+  actionText: {
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: Typography.sizes.caption,
   },
 
-  // Empty state
   emptyCard: {
     width: '100%', paddingVertical: 40,
-    borderRadius: BorderRadius.md, borderWidth: 1, borderStyle: 'dashed',
+    borderRadius: BorderRadius.lg, borderWidth: 1, borderStyle: 'dashed',
     alignItems: 'center', justifyContent: 'center',
   },
   emptyText: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.body },
