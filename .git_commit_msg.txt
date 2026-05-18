@@ -1,5 +1,5 @@
-feat: add profile insights and data backup
+feat: move data management to settings & overhaul explore tab
 
-- Added advanced insights to the profile tab (Top Genre, Most Active Month).
-- Added Data Management section to export and import the library to/from JSON, preventing data loss.
-- Polished profile typography and padding for a cleaner look.
+- Moved JSON Import/Export to SettingsScreen based on user feedback.
+- Cleaned up ProfileScreen.
+- Overhauled SearchScreen, renaming it to ExploreScreen. Added beautiful "Trending Searches", empty states, updated layout cards, and a Compass icon.

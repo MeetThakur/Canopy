@@ -1,11 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Settings, Award, TrendingUp, Book, Film, Tv, Gamepad2, Sprout, Clapperboard, Swords, Crown, Download, Upload, Zap } from 'lucide-react-native';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import * as DocumentPicker from 'expo-document-picker';
+import { Settings, Award, TrendingUp, Book, Film, Tv, Gamepad2, Sprout, Clapperboard, Swords, Crown, Zap } from 'lucide-react-native';
 
 import { Colors } from '../../constants/colors';
 import { useTheme } from '../../hooks/useTheme';
@@ -39,9 +36,8 @@ export default function ProfileScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const router = useRouter();
   
-  const { stats, recalculateStats } = useStatsStore();
+  const { stats } = useStatsStore();
   const itemsMap = useLibraryStore((s) => s.items);
-  const importData = useLibraryStore((s) => s.importData);
 
   const allItems = React.useMemo(() => {
     return Object.values(itemsMap).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -77,42 +73,6 @@ export default function ProfileScreen() {
   const earnedAchievements = ACHIEVEMENTS.filter((a) =>
     a.condition(stats.totalItems, stats.byCategory.movie, stats.byCategory.book, stats.byCategory.game)
   );
-
-  const handleExport = async () => {
-    try {
-      const state = useLibraryStore.getState();
-      const data = JSON.stringify({ items: state.items, order: state.order });
-      const fileUri = FileSystem.documentDirectory + 'kanopi_backup.json';
-      await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, { UTI: 'public.json', mimeType: 'application/json' });
-      } else {
-        Alert.alert("Error", "Sharing is not available on this device.");
-      }
-    } catch (e) {
-      Alert.alert("Export Failed", "Could not export your library data.");
-    }
-  };
-
-  const handleImport = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
-      if (result.canceled) return;
-      const fileUri = result.assets[0].uri;
-      const fileData = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
-      const parsed = JSON.parse(fileData);
-      
-      if (parsed && typeof parsed === 'object' && parsed.items) {
-        importData(parsed.items, parsed.order || []);
-        recalculateStats();
-        Alert.alert("Success", "Library data restored successfully!");
-      } else {
-        Alert.alert("Invalid File", "The selected file does not contain valid Kanopi backup data.");
-      }
-    } catch (e) {
-      Alert.alert("Import Failed", "Could not read the backup file.");
-    }
-  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -200,29 +160,6 @@ export default function ProfileScreen() {
             })}
           </View>
         </View>
-
-        {/* Data Management */}
-        <View style={[styles.section, { marginTop: Spacing.xl }]}>
-          <View style={styles.sectionHeader}>
-            <Settings size={14} color={theme.textTertiary} />
-            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Data Management</Text>
-          </View>
-          <View style={[styles.overviewCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <TouchableOpacity style={[styles.overviewRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]} onPress={handleExport}>
-              <View style={styles.overviewLeft}>
-                <Upload size={16} color={theme.textPrimary} />
-                <Text style={[styles.overviewLabel, { color: theme.textPrimary }]}>Export Backup (JSON)</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.overviewRow} onPress={handleImport}>
-              <View style={styles.overviewLeft}>
-                <Download size={16} color={theme.destructive} />
-                <Text style={[styles.overviewLabel, { color: theme.destructive }]}>Import Backup (JSON)</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
       </ScrollView>
     </SafeAreaView>
   );
