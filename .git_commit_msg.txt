@@ -1,5 +1,0 @@
-feat: move data management to settings & overhaul explore tab
-
-- Moved JSON Import/Export to SettingsScreen based on user feedback.
-- Cleaned up ProfileScreen.
-- Overhauled SearchScreen, renaming it to ExploreScreen. Added beautiful "Trending Searches", empty states, updated layout cards, and a Compass icon.

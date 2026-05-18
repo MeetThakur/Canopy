@@ -9,7 +9,11 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  Dimensions,
 } from "react-native";
+
+const SCREEN_H = Dimensions.get('window').height;
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -259,13 +263,17 @@ export function AddMediaSheet({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      transparent
+      statusBarTranslucent
       onRequestClose={onClose}
     >
+      <Pressable style={styles.backdrop} onPress={onClose} />
       <KeyboardAvoidingView
-        style={[styles.modalContainer, { backgroundColor: theme.surface }]}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.sheetOuter}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
       >
+      <View style={[styles.modalContainer, { backgroundColor: theme.surface }]}>
         {/* Handle bar */}
         <View style={styles.handleBar}>
           <View style={[styles.handle, { backgroundColor: theme.border }]} />
@@ -288,7 +296,7 @@ export function AddMediaSheet({
               style={[styles.chooseCard, { backgroundColor: theme.surface2 }]}
               onPress={() => {
                 onClose();
-                router.push("/(tabs)/search");
+                router.push("/(tabs)/explore");
               }}
             >
               <View
@@ -730,13 +738,30 @@ export function AddMediaSheet({
             />
           </ScrollView>
         )}
+      </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalContainer: { flex: 1 },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  sheetOuter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    maxHeight: SCREEN_H * 0.9,
+  },
+  modalContainer: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: SCREEN_H * 0.9,
+    overflow: 'hidden',
+  },
   handleBar: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
   handle: { width: 36, height: 5, borderRadius: 3 },
   content: { padding: Spacing.md, gap: Spacing.lg, paddingBottom: 60 },
