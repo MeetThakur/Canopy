@@ -110,10 +110,7 @@ export default function ExploreScreen() {
 
       {/* ── Header ──────────────────────── */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.headerEyebrow, { color: theme.textTertiary }]}>Discover</Text>
-          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Explore</Text>
-        </View>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Explore</Text>
       </View>
 
       {/* ── Search bar ──────────────────── */}
