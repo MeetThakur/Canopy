@@ -4,7 +4,7 @@ import {
   ScrollView, ActivityIndicator, Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search as SearchIcon, X, TrendingUp, Clock } from "lucide-react-native";
+import { Search as SearchIcon, X, TrendingUp, Clock, BookOpen, Film, Tv, Gamepad2, Layers } from "lucide-react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Colors } from "../../constants/colors";
@@ -17,12 +17,12 @@ import { MediaSearchResult } from "../../types/api";
 import { CategoryBadge } from "../../components/media/CategoryBadge";
 import { MediaType } from "../../types/media";
 
-const CATEGORY_CHIPS: { label: string; value: "all" | MediaType; emoji: string }[] = [
-  { label: "All",    value: "all",   emoji: "✦" },
-  { label: "Books",  value: "book",  emoji: "📖" },
-  { label: "Movies", value: "movie", emoji: "🎬" },
-  { label: "TV",     value: "tv",    emoji: "📺" },
-  { label: "Games",  value: "game",  emoji: "🎮" },
+const CATEGORY_CHIPS: { label: string; value: "all" | MediaType; Icon: any }[] = [
+  { label: "All",    value: "all",   Icon: Layers },
+  { label: "Books",  value: "book",  Icon: BookOpen },
+  { label: "Movies", value: "movie", Icon: Film },
+  { label: "TV",     value: "tv",    Icon: Tv },
+  { label: "Games",  value: "game",  Icon: Gamepad2 },
 ];
 
 const TRENDING_SEARCHES = [
@@ -142,13 +142,14 @@ export default function ExploreScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow} style={styles.chipsScroll}>
         {CATEGORY_CHIPS.map((chip) => {
           const active = category === chip.value;
+          const ChipIcon = chip.Icon;
           return (
             <TouchableOpacity
               key={chip.value}
               onPress={() => setCategory(chip.value)}
               style={[styles.chip, active ? { backgroundColor: theme.textPrimary } : { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}
             >
-              <Text style={[styles.chipEmoji]}>{chip.emoji}</Text>
+              <ChipIcon size={13} color={active ? theme.background : theme.textTertiary} />
               <Text style={[styles.chipText, { color: active ? theme.background : theme.textSecondary }]}>{chip.label}</Text>
             </TouchableOpacity>
           );
@@ -232,7 +233,7 @@ export default function ExploreScreen() {
         {/* ── No results ─────────────────── */}
         {noResults && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🔍</Text>
+            <SearchIcon size={40} color={theme.surface2} />
             <Text style={[styles.emptyTitle, { color: theme.textSecondary }]}>No results for "{query}"</Text>
             <Text style={[styles.emptyHint, { color: theme.textTertiary }]}>Try a different spelling or category</Text>
           </View>
@@ -257,7 +258,6 @@ const styles = StyleSheet.create({
   chipsScroll: { flexGrow: 0, marginBottom: Spacing.md },
   chipsRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingRight: Spacing.md },
   chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: BorderRadius.full },
-  chipEmoji: { fontSize: 12 },
   chipText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall },
   scroll: { paddingHorizontal: Spacing.md, paddingBottom: 100 },
   centered: { alignItems: "center", gap: 8, paddingTop: Spacing.xxl },
@@ -281,7 +281,6 @@ const styles = StyleSheet.create({
   resultMeta: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginTop: 4 },
   resultYear: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.caption },
   emptyState: { alignItems: "center", paddingTop: Spacing.xxl, gap: Spacing.sm },
-  emptyIcon: { fontSize: 48 },
   emptyTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.body },
   emptyHint: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall },
 });
