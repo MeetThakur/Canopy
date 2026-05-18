@@ -1,4 +1,5 @@
-feat: replace TMDB with OMDB & TVMaze, fix nav overlap
+feat: add profile insights and data backup
 
-- Replaced TMDB API (which is blocked by some Indian ISPs) with OMDb API for movies and TVMaze for TV shows to ensure reliable search functionality.
-- Added safe area insets to the bottom tab bar to prevent icons from overlapping with the system navigation bar on modern Android devices.
+- Added advanced insights to the profile tab (Top Genre, Most Active Month).
+- Added Data Management section to export and import the library to/from JSON, preventing data loss.
+- Polished profile typography and padding for a cleaner look.

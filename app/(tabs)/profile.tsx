@@ -1,8 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Settings, Award, TrendingUp, Book, Film, Tv, Gamepad2, Sprout, Clapperboard, Swords, Crown } from 'lucide-react-native';
+import { Settings, Award, TrendingUp, Book, Film, Tv, Gamepad2, Sprout, Clapperboard, Swords, Crown, Download, Upload, Zap } from 'lucide-react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+
 import { Colors } from '../../constants/colors';
 import { useTheme } from '../../hooks/useTheme';
 import { Typography } from '../../constants/typography';
@@ -18,14 +22,14 @@ const ACHIEVEMENTS = [
   { id: 'gamer', label: 'Player One', Icon: Swords, condition: (_: number, __: number, ___: number, games: number) => games >= 5 },
 ];
 
-function StatPill({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+function StatPill({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number | string; color: string }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   return (
     <View style={[styles.statPill, { backgroundColor: theme.surface2 }]}>
       <View style={[styles.statDot, { backgroundColor: color }]} />
-      <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: theme.textTertiary }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: theme.textPrimary }]} numberOfLines={1}>{value}</Text>
+      <Text style={[styles.statLabel, { color: theme.textTertiary }]} numberOfLines={1}>{label}</Text>
     </View>
   );
 }
@@ -34,8 +38,11 @@ export default function ProfileScreen() {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   const router = useRouter();
-  const { stats } = useStatsStore();
+  
+  const { stats, recalculateStats } = useStatsStore();
   const itemsMap = useLibraryStore((s) => s.items);
+  const importData = useLibraryStore((s) => s.importData);
+
   const allItems = React.useMemo(() => {
     return Object.values(itemsMap).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }, [itemsMap]);
@@ -43,9 +50,69 @@ export default function ProfileScreen() {
   const year = new Date().getFullYear();
   const thisYearItems = allItems.filter((i) => i.createdAt && new Date(i.createdAt).getFullYear() === year);
 
+  const topGenre = React.useMemo(() => {
+    const genreCounts: Record<string, number> = {};
+    allItems.forEach(item => {
+      item.genre?.forEach(g => {
+        genreCounts[g] = (genreCounts[g] || 0) + 1;
+      });
+    });
+    const sorted = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]);
+    return sorted.length > 0 ? sorted[0][0] : '-';
+  }, [allItems]);
+
+  const topMonth = React.useMemo(() => {
+    const monthCounts: Record<number, number> = {};
+    thisYearItems.forEach(item => {
+      if (!item.createdAt) return;
+      const m = new Date(item.createdAt).getMonth();
+      monthCounts[m] = (monthCounts[m] || 0) + 1;
+    });
+    const sorted = Object.entries(monthCounts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) return '-';
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return monthNames[parseInt(sorted[0][0], 10)];
+  }, [thisYearItems]);
+
   const earnedAchievements = ACHIEVEMENTS.filter((a) =>
     a.condition(stats.totalItems, stats.byCategory.movie, stats.byCategory.book, stats.byCategory.game)
   );
+
+  const handleExport = async () => {
+    try {
+      const state = useLibraryStore.getState();
+      const data = JSON.stringify({ items: state.items, order: state.order });
+      const fileUri = FileSystem.documentDirectory + 'kanopi_backup.json';
+      await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri, { UTI: 'public.json', mimeType: 'application/json' });
+      } else {
+        Alert.alert("Error", "Sharing is not available on this device.");
+      }
+    } catch (e) {
+      Alert.alert("Export Failed", "Could not export your library data.");
+    }
+  };
+
+  const handleImport = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
+      if (result.canceled) return;
+      const fileUri = result.assets[0].uri;
+      const fileData = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
+      const parsed = JSON.parse(fileData);
+      
+      if (parsed && typeof parsed === 'object' && parsed.items) {
+        importData(parsed.items, parsed.order || []);
+        recalculateStats();
+        Alert.alert("Success", "Library data restored successfully!");
+      } else {
+        Alert.alert("Invalid File", "The selected file does not contain valid Kanopi backup data.");
+      }
+    } catch (e) {
+      Alert.alert("Import Failed", "Could not read the backup file.");
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -64,8 +131,8 @@ export default function ProfileScreen() {
 
         {/* Summary */}
         <View style={[styles.summaryCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={[styles.avatarCircle, { backgroundColor: theme.accent + '15' }]}>
-            <Text style={[styles.avatarLetter, { color: theme.accent }]}>K</Text>
+          <View style={[styles.avatarCircle, { backgroundColor: theme.accentBooks + '15' }]}>
+            <Text style={[styles.avatarLetter, { color: theme.accentBooks }]}>K</Text>
           </View>
           <View style={styles.summaryText}>
             <Text style={[styles.summaryTitle, { color: theme.textPrimary }]}>{stats.totalItems} items tracked</Text>
@@ -81,11 +148,17 @@ export default function ProfileScreen() {
           <StatPill icon={<Gamepad2 size={14} color={theme.accentGames} />} label="Games" value={stats.byCategory.game} color={theme.accentGames} />
         </View>
 
+        {/* Insights */}
+        <View style={styles.pillsRow}>
+          <StatPill icon={<TrendingUp size={14} color={theme.textPrimary} />} label="Top Genre" value={topGenre} color={theme.textSecondary} />
+          <StatPill icon={<Zap size={14} color={theme.textPrimary} />} label="Most Active" value={topMonth} color={theme.textSecondary} />
+        </View>
+
         {/* Status overview */}
         <View style={[styles.overviewCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           {([
             { label: 'Completed', val: stats.byStatus.completed, color: theme.success },
-            { label: 'In Progress', val: stats.byStatus.inprogress, color: theme.accent },
+            { label: 'In Progress', val: stats.byStatus.inprogress, color: theme.accentBooks },
             { label: 'Wishlist', val: stats.byStatus.want, color: theme.textTertiary },
           ] as const).map((row, i, arr) => (
             <View key={row.label} style={[styles.overviewRow, i < arr.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
@@ -114,19 +187,42 @@ export default function ProfileScreen() {
                   style={[
                     styles.badge,
                     {
-                      backgroundColor: earned ? theme.accent + '10' : theme.surface2,
-                      borderColor: earned ? theme.accent + '30' : 'transparent',
-                      opacity: earned ? 1 : 0.35,
+                      backgroundColor: earned ? theme.accentBooks + '10' : theme.surface2,
+                      borderColor: earned ? theme.accentBooks + '30' : 'transparent',
+                      opacity: earned ? 1 : 0.4,
                     },
                   ]}
                 >
-                  <AIcon size={20} color={earned ? theme.accent : theme.textTertiary} />
+                  <AIcon size={20} color={earned ? theme.accentBooks : theme.textTertiary} />
                   <Text style={[styles.badgeLabel, { color: earned ? theme.textPrimary : theme.textTertiary }]} numberOfLines={1}>{a.label}</Text>
                 </View>
               );
             })}
           </View>
         </View>
+
+        {/* Data Management */}
+        <View style={[styles.section, { marginTop: Spacing.xl }]}>
+          <View style={styles.sectionHeader}>
+            <Settings size={14} color={theme.textTertiary} />
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Data Management</Text>
+          </View>
+          <View style={[styles.overviewCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <TouchableOpacity style={[styles.overviewRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]} onPress={handleExport}>
+              <View style={styles.overviewLeft}>
+                <Upload size={16} color={theme.textPrimary} />
+                <Text style={[styles.overviewLabel, { color: theme.textPrimary }]}>Export Backup (JSON)</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.overviewRow} onPress={handleImport}>
+              <View style={styles.overviewLeft}>
+                <Download size={16} color={theme.destructive} />
+                <Text style={[styles.overviewLabel, { color: theme.destructive }]}>Import Backup (JSON)</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -139,43 +235,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: Spacing.md, paddingTop: 12, paddingBottom: Spacing.sm,
   },
-  pageTitle: { fontFamily: Typography.fontFamily.heading, fontSize: Typography.sizes.display },
+  pageTitle: { fontFamily: Typography.fontFamily.primaryBold, fontSize: 28, letterSpacing: -1 },
   iconBtn: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   summaryCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     marginHorizontal: Spacing.md, marginBottom: Spacing.md, padding: Spacing.md,
-    borderRadius: BorderRadius.md, borderWidth: 1,
+    borderRadius: BorderRadius.md, borderWidth: StyleSheet.hairlineWidth,
   },
   avatarCircle: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  avatarLetter: { fontFamily: Typography.fontFamily.heading, fontSize: 22 },
+  avatarLetter: { fontFamily: Typography.fontFamily.primaryBold, fontSize: 22 },
   summaryText: { gap: 2 },
-  summaryTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.h3 },
+  summaryTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.body },
   summarySub: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.bodySmall },
   pillsRow: {
     flexDirection: 'row', paddingHorizontal: Spacing.md, gap: 8, marginBottom: Spacing.md,
   },
   statPill: {
-    flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: BorderRadius.sm, gap: 4,
+    flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: BorderRadius.sm, gap: 4,
   },
   statDot: { width: 6, height: 6, borderRadius: 3 },
-  statValue: { fontFamily: Typography.fontFamily.primaryBold, fontSize: Typography.sizes.h2 },
+  statValue: { fontFamily: Typography.fontFamily.primaryBold, fontSize: Typography.sizes.h3 },
   statLabel: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.micro },
   overviewCard: {
-    marginHorizontal: Spacing.md, borderRadius: BorderRadius.md, borderWidth: 1,
+    marginHorizontal: Spacing.md, borderRadius: BorderRadius.md, borderWidth: StyleSheet.hairlineWidth,
     marginBottom: Spacing.lg, overflow: 'hidden',
   },
   overviewRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14 },
   overviewLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   overviewDot: { width: 8, height: 8, borderRadius: 4 },
-  overviewLabel: { fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.body },
+  overviewLabel: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall },
   overviewVal: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.body },
-  section: { paddingHorizontal: Spacing.md },
+  section: { paddingHorizontal: Spacing.md, marginBottom: Spacing.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.sm },
   sectionTitle: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.caption, textTransform: 'uppercase', letterSpacing: 1 },
   badgesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   badge: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: BorderRadius.sm, borderWidth: 1,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: BorderRadius.sm, borderWidth: StyleSheet.hairlineWidth,
   },
   badgeLabel: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.bodySmall },
 });

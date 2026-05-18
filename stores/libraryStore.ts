@@ -12,6 +12,7 @@ interface LibraryState {
   reorderItems: (newOrder: string[]) => void;
   getItems: () => MediaItem[];
   getItemById: (id: string) => MediaItem | undefined;
+  importData: (items: Record<string, MediaItem>, order: string[]) => void;
 }
 
 export const useLibraryStore = create<LibraryState>()(
@@ -63,6 +64,7 @@ export const useLibraryStore = create<LibraryState>()(
         return [...orderedItems, ...remainingItems];
       },
       getItemById: (id) => get().items[id],
+      importData: (items, order) => set({ items, order }),
     }),
     {
       name: "library-storage",
