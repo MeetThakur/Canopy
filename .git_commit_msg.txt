@@ -1,5 +1,4 @@
-style: refine modern layout and fix cover display
+feat: replace TMDB with OMDB & TVMaze, fix nav overlap
 
-- Darkened the light mode background (`#F0F2F5`) to reduce glare and increase contrast with pure white cards
-- Fixed covers not displaying in the homepage grid by replacing `aspectRatio` with a fixed height and removing conflicting shadow props on `overflow: hidden` views
-- Updated `MinimalRow` to display actionable status text (e.g. "Currently Enjoying", "Completed") instead of generic media types
+- Replaced TMDB API (which is blocked by some Indian ISPs) with OMDb API for movies and TVMaze for TV shows to ensure reliable search functionality.
+- Added safe area insets to the bottom tab bar to prevent icons from overlapping with the system navigation bar on modern Android devices.

@@ -31,10 +31,10 @@ function MinimalGridCard({ item, onPress, style }: { item: MediaItem; onPress: (
       accessibilityLabel={item.title}
       activeOpacity={0.8}
     >
-      <View style={[styles.gridCoverWrap, { backgroundColor: theme.surface2, shadowColor: '#000' }]}>
+      <View style={[styles.gridCoverWrap, { backgroundColor: theme.surface2 }]}>
         <Image
-          source={{ uri: item.coverUrl || undefined }}
-          style={styles.gridCover}
+          source={item.coverUrl ? { uri: item.coverUrl } : undefined}
+          style={[styles.gridCover, { borderRadius: BorderRadius.md }]}
           contentFit="cover"
         />
       </View>
@@ -74,8 +74,8 @@ function MinimalRow({ item, onPress }: { item: MediaItem; onPress: () => void })
     >
       <View style={[styles.coverWrap, { backgroundColor: theme.surface2 }]}>
         <Image
-          source={{ uri: item.coverUrl || undefined }}
-          style={styles.cover}
+          source={item.coverUrl ? { uri: item.coverUrl } : undefined}
+          style={[styles.cover, { borderRadius: BorderRadius.sm }]}
           contentFit="cover"
         />
       </View>

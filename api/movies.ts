@@ -1,9 +1,8 @@
 import { MediaSearchResult } from '../types/api';
 
-const API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY ?? '';
-const BASE = 'https://api.themoviedb.org/3';
-const IMG_W500 = 'https://image.tmdb.org/t/p/w500';
-const IMG_ORIGINAL = 'https://image.tmdb.org/t/p/original';
+const OMDB_API_KEY = 'thewdb';
+const OMDB_BASE = 'https://www.omdbapi.com';
+const TVMAZE_BASE = 'https://api.tvmaze.com';
 
 function yearFromDate(dateStr: string): number | undefined {
   const y = parseInt(dateStr?.split('-')[0] ?? '', 10);
@@ -11,64 +10,42 @@ function yearFromDate(dateStr: string): number | undefined {
 }
 
 export async function searchMovies(query: string): Promise<MediaSearchResult[]> {
-  if (!API_KEY) return [];
-  const res = await fetch(`${BASE}/search/movie?query=${encodeURIComponent(query)}&api_key=${API_KEY}&append_to_response=credits`);
+  const res = await fetch(`${OMDB_BASE}/?apikey=${OMDB_API_KEY}&type=movie&s=${encodeURIComponent(query)}`);
   if (!res.ok) throw new Error('Movie search failed');
-  const data: { results: any[] } = await res.json();
-
-  // For search results, fetch details for top 5 to get credits
-  const results = data.results.slice(0, 15);
-  return results.map((m) => ({
-    id: String(m.id),
-    sourceId: String(m.id),
+  const data = await res.json();
+  if (data.Response === 'False' || !data.Search) return [];
+  
+  return data.Search.slice(0, 15).map((m: any) => ({
+    id: m.imdbID,
+    sourceId: m.imdbID,
     type: 'movie' as const,
-    title: m.title,
+    title: m.Title,
     subtitle: '',
-    coverUrl: m.poster_path ? `${IMG_W500}${m.poster_path}` : '',
-    backdropUrl: m.backdrop_path ? `${IMG_ORIGINAL}${m.backdrop_path}` : '',
-    year: yearFromDate(m.release_date),
-    releaseDate: m.release_date,
-    description: m.overview,
-    genre: [],
-    popularity: m.popularity,
-    voteAverage: m.vote_average,
+    coverUrl: m.Poster && m.Poster !== 'N/A' ? m.Poster : '',
+    year: parseInt(m.Year, 10) || undefined,
   }));
 }
 
 export async function getMovieDetails(id: string): Promise<MediaSearchResult | null> {
-  if (!API_KEY) return null;
   try {
-    const [detailRes, creditsRes] = await Promise.all([
-      fetch(`${BASE}/movie/${id}?api_key=${API_KEY}`),
-      fetch(`${BASE}/movie/${id}/credits?api_key=${API_KEY}`),
-    ]);
-    if (!detailRes.ok) return null;
-    const m = await detailRes.json();
-    const credits = creditsRes.ok ? await creditsRes.json() : { crew: [], cast: [] };
-
-    const director = credits.crew?.find((c: any) => c.job === 'Director')?.name ?? '';
-    const cast = credits.cast?.slice(0, 5).map((c: any) => c.name) ?? [];
+    const res = await fetch(`${OMDB_BASE}/?apikey=${OMDB_API_KEY}&i=${id}&plot=full`);
+    if (!res.ok) return null;
+    const m = await res.json();
+    if (m.Response === 'False') return null;
 
     return {
-      id: String(m.id),
-      sourceId: String(m.id),
+      id: m.imdbID,
+      sourceId: m.imdbID,
       type: 'movie',
-      title: m.title,
-      subtitle: director,
-      coverUrl: m.poster_path ? `${IMG_W500}${m.poster_path}` : '',
-      backdropUrl: m.backdrop_path ? `${IMG_ORIGINAL}${m.backdrop_path}` : '',
-      year: yearFromDate(m.release_date),
-      releaseDate: m.release_date,
-      description: m.overview,
-      runtime: m.runtime,
-      genre: m.genres?.map((g: any) => g.name) ?? [],
-      language: m.original_language,
-      director,
-      cast,
-      tagline: m.tagline,
-      budget: m.budget,
-      revenue: m.revenue,
-      voteAverage: m.vote_average,
+      title: m.Title,
+      subtitle: m.Director !== 'N/A' ? m.Director : '',
+      coverUrl: m.Poster !== 'N/A' ? m.Poster : '',
+      year: parseInt(m.Year, 10) || undefined,
+      description: m.Plot !== 'N/A' ? m.Plot : '',
+      runtime: m.Runtime !== 'N/A' ? parseInt(m.Runtime, 10) : undefined,
+      genre: m.Genre !== 'N/A' ? m.Genre.split(', ') : [],
+      director: m.Director !== 'N/A' ? m.Director : '',
+      cast: m.Actors !== 'N/A' ? m.Actors.split(', ') : [],
     };
   } catch {
     return null;
@@ -76,53 +53,44 @@ export async function getMovieDetails(id: string): Promise<MediaSearchResult | n
 }
 
 export async function searchTV(query: string): Promise<MediaSearchResult[]> {
-  if (!API_KEY) return [];
-  const res = await fetch(`${BASE}/search/tv?query=${encodeURIComponent(query)}&api_key=${API_KEY}`);
+  const res = await fetch(`${TVMAZE_BASE}/search/shows?q=${encodeURIComponent(query)}`);
   if (!res.ok) throw new Error('TV search failed');
-  const data: { results: any[] } = await res.json();
-  return data.results.slice(0, 15).map((s) => ({
-    id: String(s.id),
-    sourceId: String(s.id),
-    type: 'tv' as const,
-    title: s.name,
-    subtitle: '',
-    coverUrl: s.poster_path ? `${IMG_W500}${s.poster_path}` : '',
-    backdropUrl: s.backdrop_path ? `${IMG_ORIGINAL}${s.backdrop_path}` : '',
-    year: yearFromDate(s.first_air_date),
-    releaseDate: s.first_air_date,
-    description: s.overview,
-    seasons: s.number_of_seasons,
-    genre: [],
-  }));
+  const data: any[] = await res.json();
+  
+  return data.slice(0, 15).map((s) => {
+    const show = s.show;
+    return {
+      id: String(show.id),
+      sourceId: String(show.id),
+      type: 'tv' as const,
+      title: show.name,
+      subtitle: show.network?.name || '',
+      coverUrl: show.image?.original || show.image?.medium || '',
+      year: show.premiered ? parseInt(show.premiered.split('-')[0], 10) : undefined,
+      description: show.summary ? show.summary.replace(/<[^>]+>/g, '') : '', 
+      genre: show.genres || [],
+    };
+  });
 }
 
 export async function getTVDetails(id: string): Promise<MediaSearchResult | null> {
-  if (!API_KEY) return null;
   try {
-    const res = await fetch(`${BASE}/tv/${id}?api_key=${API_KEY}`);
+    const res = await fetch(`${TVMAZE_BASE}/shows/${id}`);
     if (!res.ok) return null;
-    const s = await res.json();
-    const creator = s.created_by?.[0]?.name ?? '';
-    const cast = s.credits?.cast?.slice(0, 5).map((c: any) => c.name) ?? [];
+    const show = await res.json();
 
     return {
-      id: String(s.id),
-      sourceId: String(s.id),
+      id: String(show.id),
+      sourceId: String(show.id),
       type: 'tv',
-      title: s.name,
-      subtitle: creator,
-      coverUrl: s.poster_path ? `${IMG_W500}${s.poster_path}` : '',
-      backdropUrl: s.backdrop_path ? `${IMG_ORIGINAL}${s.backdrop_path}` : '',
-      year: yearFromDate(s.first_air_date),
-      releaseDate: s.first_air_date,
-      description: s.overview,
-      seasons: s.number_of_seasons,
-      numberOfEpisodes: s.number_of_episodes,
-      genre: s.genres?.map((g: any) => g.name) ?? [],
-      language: s.original_language,
-      network: s.networks?.[0]?.name ?? '',
-      status_tv: s.status,
-      cast,
+      title: show.name,
+      subtitle: show.network?.name || '',
+      coverUrl: show.image?.original || show.image?.medium || '',
+      year: show.premiered ? parseInt(show.premiered.split('-')[0], 10) : undefined,
+      description: show.summary ? show.summary.replace(/<[^>]+>/g, '') : '',
+      genre: show.genres || [],
+      network: show.network?.name || '',
+      status_tv: show.status,
     };
   } catch {
     return null;
@@ -130,20 +98,6 @@ export async function getTVDetails(id: string): Promise<MediaSearchResult | null
 }
 
 export async function getTrendingAll(): Promise<MediaSearchResult[]> {
-  if (!API_KEY) return [];
-  const res = await fetch(`${BASE}/trending/all/week?api_key=${API_KEY}`);
-  if (!res.ok) throw new Error('Trending fetch failed');
-  const data: { results: any[] } = await res.json();
-  return data.results
-    .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
-    .map((r) => ({
-      id: String(r.id),
-      sourceId: String(r.id),
-      type: r.media_type as 'movie' | 'tv',
-      title: r.title ?? r.name ?? '',
-      subtitle: '',
-      coverUrl: r.poster_path ? `${IMG_W500}${r.poster_path}` : '',
-      year: yearFromDate(r.release_date ?? r.first_air_date ?? ''),
-      description: r.overview,
-    }));
+  // Gracefully fallback to empty since TVMaze/OMDB don't have a simple unified trending endpoint without extra setup
+  return [];
 }

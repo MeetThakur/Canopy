@@ -9,6 +9,7 @@ import {
   Platform,
   UIManager,
   TextInput,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
@@ -49,13 +50,18 @@ const STATUS_FILTERS: { label: string; value: "all" | Status }[] = [
 
 type SortMode = 'newest' | 'alphabetical' | 'rating';
 
-function GridCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
+function GridCard({ item, onPress, onLongPress }: { item: MediaItem; onPress: () => void; onLongPress?: () => void }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   return (
-    <TouchableOpacity style={styles.gridCard} onPress={onPress} accessibilityLabel={item.title}>
-      <View style={[styles.gridCoverContainer, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
-        <Image source={{ uri: item.coverUrl || undefined }} style={styles.gridCover} contentFit="cover" transition={200} />
+    <TouchableOpacity style={styles.gridCard} onPress={onPress} onLongPress={onLongPress} accessibilityLabel={item.title}>
+      <View style={[styles.gridCoverContainer, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth, backgroundColor: theme.surface2 }]}>
+        <Image 
+          source={item.coverUrl ? { uri: item.coverUrl } : undefined} 
+          style={styles.gridCover} 
+          contentFit="cover" 
+          transition={200} 
+        />
       </View>
       <Text style={[styles.gridTitle, { color: theme.textPrimary }]} numberOfLines={2}>
         {item.title}
@@ -68,9 +74,12 @@ export default function LibraryScreen() {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
   const router = useRouter();
+  
   const [sheetVisible, setSheetVisible] = useState(false);
-
+  const [editItemId, setEditItemId] = useState<string | undefined>();
+  
   const itemsMap = useLibraryStore((s) => s.items);
+  const removeItem = useLibraryStore((s) => s.removeItem);
 
   const [activeCategory, setActiveCategory] = useState<"all" | MediaType>("all");
   const [activeStatus, setActiveStatus] = useState<"all" | Status>("all");
@@ -126,6 +135,24 @@ export default function LibraryScreen() {
     const modes: SortMode[] = ['newest', 'alphabetical', 'rating'];
     const nextIndex = (modes.indexOf(sortMode) + 1) % modes.length;
     setSortMode(modes[nextIndex]);
+  };
+  
+  const handleLongPress = (item: MediaItem) => {
+    Alert.alert(
+      item.title,
+      "What would you like to do?",
+      [
+        { text: "Edit", onPress: () => { setEditItemId(item.id); setSheetVisible(true); } },
+        { text: "Delete", style: "destructive", onPress: () => removeItem(item.id) },
+        { text: "Cancel", style: "cancel" },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const closeSheet = () => {
+    setSheetVisible(false);
+    setTimeout(() => setEditItemId(undefined), 300);
   };
 
   return (
@@ -242,6 +269,7 @@ export default function LibraryScreen() {
               <MediaRow
                 item={item}
                 onPress={() => router.push(`/media/${item.id}`)}
+                onLongPress={() => handleLongPress(item)}
                 style={{ paddingHorizontal: Spacing.md }}
               />
             )}
@@ -255,7 +283,11 @@ export default function LibraryScreen() {
             numColumns={3}
             renderItem={({ item }) => (
               <View style={{ flex: 1, padding: Spacing.xs }}>
-                <GridCard item={item} onPress={() => router.push(`/media/${item.id}`)} />
+                <GridCard 
+                  item={item} 
+                  onPress={() => router.push(`/media/${item.id}`)} 
+                  onLongPress={() => handleLongPress(item)} 
+                />
               </View>
             )}
             estimatedItemSize={160}
@@ -272,7 +304,7 @@ export default function LibraryScreen() {
         <Plus size={24} color={theme.background} />
       </TouchableOpacity>
 
-      <AddMediaSheet visible={sheetVisible} onClose={() => setSheetVisible(false)} />
+      <AddMediaSheet visible={sheetVisible} onClose={closeSheet} editId={editItemId} />
     </SafeAreaView>
   );
 }

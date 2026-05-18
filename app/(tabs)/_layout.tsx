@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Home, Library, Search, User } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
 import { useTheme } from '../../hooks/useTheme';
 import { Typography } from '../../constants/typography';
@@ -7,6 +8,7 @@ import { Typography } from '../../constants/typography';
 export default function TabLayout() {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -16,8 +18,8 @@ export default function TabLayout() {
           backgroundColor: theme.background,
           borderTopColor: theme.border,
           borderTopWidth: 0.5,
-          height: 56,
-          paddingBottom: 6,
+          height: 56 + insets.bottom,
+          paddingBottom: 6 + insets.bottom,
           paddingTop: 6,
           elevation: 0,
         },
