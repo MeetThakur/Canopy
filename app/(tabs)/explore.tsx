@@ -75,13 +75,20 @@ export default function ExploreScreen() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const clearResults = useCallback(() => {
+    // Directly clear results in the store when query is emptied
+    useSearchStore.setState({ results: [] });
+  }, []);
+
   const handleChangeText = useCallback((text: string) => {
     setQuery(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (text.trim().length > 1) {
       debounceRef.current = setTimeout(() => search(), 350);
+    } else if (text.trim().length === 0) {
+      clearResults();
     }
-  }, [setQuery, search]);
+  }, [setQuery, search, clearResults]);
 
   // Auto-search when category changes (if there's already a query)
   useEffect(() => {
@@ -124,7 +131,7 @@ export default function ExploreScreen() {
             autoCapitalize="none"
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")} hitSlop={8}>
+            <TouchableOpacity onPress={() => { setQuery(""); clearResults(); }} hitSlop={8}>
               <X size={16} color={theme.textTertiary} />
             </TouchableOpacity>
           )}
