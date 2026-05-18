@@ -50,7 +50,7 @@ export default function SettingsScreen() {
     try {
       const state = useLibraryStore.getState();
       const data = JSON.stringify({ items: state.items, order: state.order });
-      const fileUri = FileSystem.documentDirectory + 'kanopi_backup.json';
+      const fileUri = FileSystem.documentDirectory + 'canopy_backup.json';
       await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri, { UTI: 'public.json', mimeType: 'application/json' });
@@ -75,7 +75,7 @@ export default function SettingsScreen() {
         recalculateStats();
         Alert.alert("Success", "Library data restored successfully!");
       } else {
-        Alert.alert("Invalid File", "The selected file does not contain valid Kanopi backup data.");
+        Alert.alert("Invalid File", "The selected file does not contain valid Canopy backup data.");
       }
     } catch (e) {
       Alert.alert("Import Failed", "Could not read the backup file.");
@@ -125,7 +125,7 @@ export default function SettingsScreen() {
 
         <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>About</Text>
         <Card style={[styles.card, { borderColor: theme.border }]}>
-          <SettingRow label="Kanopi v1.0.0" right={<Info size={18} color={theme.textTertiary} />} />
+          <SettingRow label="Canopy v1.0.0" right={<Info size={18} color={theme.textTertiary} />} />
           <SettingRow label='Track what you love.' />
         </Card>
       </ScrollView>

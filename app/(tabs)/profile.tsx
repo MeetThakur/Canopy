@@ -73,10 +73,7 @@ export default function ProfileScreen() {
 
         {/* ── Header ─────────────────────── */}
         <View style={styles.header}>
-          <View>
-            <Text style={[styles.greeting, { color: theme.textTertiary }]}>Your journey</Text>
-            <Text style={[styles.title, { color: theme.textPrimary }]}>Profile</Text>
-          </View>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>Profile</Text>
           <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: theme.surface }]} onPress={() => router.push('/settings')}>
             <Settings size={18} color={theme.textSecondary} />
           </TouchableOpacity>

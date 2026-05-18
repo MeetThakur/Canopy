@@ -144,7 +144,7 @@ export default function ExploreScreen() {
             <TouchableOpacity
               key={chip.value}
               onPress={() => setCategory(chip.value)}
-              style={[styles.chip, active ? { backgroundColor: theme.textPrimary } : { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}
+              style={[styles.chip, { marginRight: Spacing.sm }, active ? { backgroundColor: theme.textPrimary } : { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}
             >
               <ChipIcon size={13} color={active ? theme.background : theme.textTertiary} />
               <Text style={[styles.chipText, { color: active ? theme.background : theme.textSecondary }]}>{chip.label}</Text>
@@ -252,9 +252,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, height: 48, borderRadius: BorderRadius.lg, borderWidth: StyleSheet.hairlineWidth,
   },
   input: { flex: 1, fontFamily: Typography.fontFamily.primary, fontSize: Typography.sizes.body },
-  chipsScroll: { flexGrow: 0, marginBottom: Spacing.md },
-  chipsRow: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingRight: Spacing.md },
-  chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: BorderRadius.full },
+  chipsScroll: { flexGrow: 0, flexShrink: 0, marginBottom: Spacing.md, height: 40 },
+  chipsRow: { paddingHorizontal: Spacing.md, paddingRight: Spacing.md, alignItems: "center" },
+  chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: BorderRadius.full, flexShrink: 0 },
   chipText: { fontFamily: Typography.fontFamily.primarySemiBold, fontSize: Typography.sizes.bodySmall },
   scroll: { paddingHorizontal: Spacing.md, paddingBottom: 100 },
   centered: { alignItems: "center", gap: 8, paddingTop: Spacing.xxl },
