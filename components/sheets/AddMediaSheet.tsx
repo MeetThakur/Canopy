@@ -189,7 +189,7 @@ export function AddMediaSheet({
     watch,
     formState: { errors, isValid },
   } = useForm<FormData>({
-    resolver: zodResolver(baseSchema),
+    resolver: zodResolver(baseSchema) as any,
     defaultValues,
     mode: "onChange",
   });
@@ -368,7 +368,9 @@ export function AddMediaSheet({
 
             {/* Type picker - Only shown when adding manually without prefill */}
             {!prefill && !editId && (
-              <Field label="Category">
+              <>
+              <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>Category</Text>
+              <Field label="">
                 <Controller
                   control={control}
                   name="type"
@@ -416,7 +418,10 @@ export function AddMediaSheet({
                   )}
                 />
               </Field>
+              </>
             )}
+
+            <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>Basic Info</Text>
 
             {/* Title */}
             <Field label="Title *" error={errors.title?.message}>
@@ -491,6 +496,8 @@ export function AddMediaSheet({
               />
             </Field>
 
+            <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>Your Status</Text>
+
             {/* Status */}
             <Field label="Status">
               <Controller
@@ -547,6 +554,8 @@ export function AddMediaSheet({
                 )}
               />
             </Field>
+
+            <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>Details</Text>
 
             {/* Year */}
             <Field label="Year">
@@ -731,7 +740,7 @@ export function AddMediaSheet({
 
             <Button
               title={editId ? "Save Changes" : "Add to Library"}
-              onPress={handleSubmit(onSubmit)}
+              onPress={handleSubmit(onSubmit as any)}
               disabled={!isValid}
               style={styles.submitBtn}
               accessibilityLabel={editId ? "Save changes" : "Add to library"}
@@ -769,7 +778,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  sectionLabel: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.caption,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginTop: Spacing.sm,
   },
   sheetTitle: {
     fontFamily: Typography.fontFamily.primarySemiBold,

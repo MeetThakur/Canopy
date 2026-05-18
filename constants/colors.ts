@@ -10,6 +10,7 @@ export const Colors = {
     textSecondary: '#4B5563',
     textTertiary: '#9CA3AF',
     border: '#D1D5DB',
+    accent: '#111827',
     accentBooks: '#2563EB',
     accentMovies: '#7C3AED',
     accentTV: '#E11D48',
@@ -25,6 +26,7 @@ export const Colors = {
     textSecondary: '#9CA3AF',
     textTertiary: '#6B7280',
     border: '#374151',
+    accent: '#F9FAFB',
     accentBooks: '#60A5FA', // bright blue
     accentMovies: '#A78BFA', // bright purple
     accentTV: '#FB7185', // bright rose

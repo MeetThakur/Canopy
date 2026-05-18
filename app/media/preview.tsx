@@ -17,6 +17,8 @@ import { BorderRadius, Spacing } from "../../constants/spacing";
 import { CategoryBadge } from "../../components/media/CategoryBadge";
 import { AddMediaSheet } from "../../components/sheets/AddMediaSheet";
 import { MediaType } from "../../types/media";
+import { getMediaDetails } from "../../api/unified";
+import { ActivityIndicator } from "react-native";
 
 export default function MediaPreviewScreen() {
   const { isDark } = useTheme();
@@ -44,6 +46,35 @@ export default function MediaPreviewScreen() {
         coverUrl: params.coverUrl,
         year: params.year,
       };
+
+  const [detailedInfo, setDetailedInfo] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+    async function fetchDetails() {
+      if (itemInfo.type !== 'book' && itemInfo.sourceId) {
+        const details = await getMediaDetails(itemInfo.type, itemInfo.sourceId);
+        if (mounted && details) {
+          setDetailedInfo(details);
+        }
+      }
+      if (mounted) setLoadingDetails(false);
+    }
+    fetchDetails();
+    return () => { mounted = false; };
+  }, [itemInfo.sourceId, itemInfo.type]);
+
+  const finalInfo = { ...itemInfo, ...detailedInfo };
+
+  const getAccentColor = (t: string) => {
+    switch (t) {
+      case 'movie': return theme.accentMovies;
+      case 'tv': return theme.accentTV;
+      case 'game': return theme.accentGames;
+      default: return theme.accentBooks;
+    }
+  };
 
   const [addSheetVisible, setAddSheetVisible] = useState(false);
 
@@ -79,17 +110,17 @@ export default function MediaPreviewScreen() {
           />
           <View style={styles.heroMeta}>
             <Text style={styles.heroTitle} numberOfLines={3}>
-              {itemInfo.title}
+              {finalInfo.title}
             </Text>
-            {itemInfo.subtitle ? (
+            {finalInfo.subtitle ? (
               <Text style={styles.heroSubtitle} numberOfLines={2}>
-                {itemInfo.subtitle}
+                {finalInfo.subtitle}
               </Text>
             ) : null}
             <View style={styles.badgeRow}>
-              <CategoryBadge type={itemInfo.type as MediaType} />
-              {itemInfo.year ? (
-                <Text style={styles.heroYear}>{itemInfo.year}</Text>
+              <CategoryBadge type={finalInfo.type as MediaType} />
+              {finalInfo.year ? (
+                <Text style={styles.heroYear}>{finalInfo.year}</Text>
               ) : null}
             </View>
           </View>
@@ -100,7 +131,13 @@ export default function MediaPreviewScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {itemInfo.description ? (
+        {loadingDetails && (
+          <View style={{ alignItems: 'center', padding: Spacing.xl }}>
+            <ActivityIndicator color={theme.accent} />
+          </View>
+        )}
+
+        {!loadingDetails && finalInfo.description ? (
           <View style={styles.cleanSection}>
             <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
               Synopsis
@@ -108,60 +145,106 @@ export default function MediaPreviewScreen() {
             <Text
               style={[styles.descriptionText, { color: theme.textPrimary }]}
             >
-              {itemInfo.description}
+              {finalInfo.description}
             </Text>
           </View>
         ) : null}
 
+        {/* Genres */}
+        {!loadingDetails && finalInfo.genre && finalInfo.genre.length > 0 ? (
+          <View style={styles.cleanSection}>
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+              Genres
+            </Text>
+            <View style={styles.genreRow}>
+              {finalInfo.genre.map((g: string) => (
+                <View key={g} style={[styles.genrePill, { backgroundColor: theme.surface2 }]}>
+                  <Text style={[styles.genreText, { color: theme.textSecondary }]}>{g}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* Cast / People */}
+        {!loadingDetails && finalInfo.cast && finalInfo.cast.length > 0 ? (
+          <View style={styles.cleanSection}>
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+              Cast
+            </Text>
+            <Text style={[styles.descriptionText, { color: theme.textPrimary }]}>
+              {finalInfo.cast.join(", ")}
+            </Text>
+          </View>
+        ) : null}
+
+        {!loadingDetails && (
         <View style={styles.cleanSection}>
           <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
             Details
           </Text>
           <View style={styles.detailsGrid}>
-            {itemInfo.genre && itemInfo.genre.length > 0 ? (
+            {finalInfo.director ? (
               <View style={styles.infoBox}>
                 <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
-                  Genre
+                  Director
                 </Text>
-                <Text
-                  style={[styles.infoValue, { color: theme.textPrimary }]}
-                  numberOfLines={1}
-                >
-                  {itemInfo.genre.slice(0, 2).join(", ")}
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]} numberOfLines={1}>
+                  {finalInfo.director}
                 </Text>
               </View>
             ) : null}
-            {itemInfo.pages ? (
+            {finalInfo.developer ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Developer
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]} numberOfLines={1}>
+                  {finalInfo.developer}
+                </Text>
+              </View>
+            ) : null}
+            {finalInfo.network ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Network
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]} numberOfLines={1}>
+                  {finalInfo.network}
+                </Text>
+              </View>
+            ) : null}
+            {finalInfo.pages ? (
               <View style={styles.infoBox}>
                 <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
                   Pages
                 </Text>
                 <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
-                  {itemInfo.pages}
+                  {finalInfo.pages}
                 </Text>
               </View>
             ) : null}
-            {itemInfo.runtime ? (
+            {finalInfo.runtime ? (
               <View style={styles.infoBox}>
                 <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
                   Runtime
                 </Text>
                 <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
-                  {itemInfo.runtime} min
+                  {finalInfo.runtime} min
                 </Text>
               </View>
             ) : null}
-            {itemInfo.seasons ? (
+            {finalInfo.seasons ? (
               <View style={styles.infoBox}>
                 <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
                   Seasons
                 </Text>
                 <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
-                  {itemInfo.seasons}
+                  {finalInfo.seasons}
                 </Text>
               </View>
             ) : null}
-            {itemInfo.platform ? (
+            {finalInfo.platform ? (
               <View style={styles.infoBox}>
                 <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
                   Platforms
@@ -170,22 +253,23 @@ export default function MediaPreviewScreen() {
                   style={[styles.infoValue, { color: theme.textPrimary }]}
                   numberOfLines={1}
                 >
-                  {itemInfo.platform}
+                  {finalInfo.platform}
                 </Text>
               </View>
             ) : null}
-            {itemInfo.language ? (
+            {finalInfo.language ? (
               <View style={styles.infoBox}>
                 <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
                   Language
                 </Text>
                 <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
-                  {itemInfo.language}
+                  {finalInfo.language}
                 </Text>
               </View>
             ) : null}
           </View>
         </View>
+        )}
 
         <Text style={[styles.infoText, { color: theme.textSecondary }]}>
           This item is not yet in your library. Add it to keep track of your
@@ -193,7 +277,7 @@ export default function MediaPreviewScreen() {
         </Text>
 
         <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: theme.accent }]}
+          style={[styles.addBtn, { backgroundColor: getAccentColor(finalInfo.type) }]}
           onPress={() => setAddSheetVisible(true)}
         >
           <Plus size={20} color="#FFF" />
@@ -209,31 +293,31 @@ export default function MediaPreviewScreen() {
           setAddSheetVisible(false);
           router.back();
         }}
-        prefillSourceId={itemInfo.sourceId}
+        prefillSourceId={finalInfo.sourceId}
         prefill={{
-          title: itemInfo.title || "",
-          subtitle: itemInfo.subtitle || "",
-          coverUrl: itemInfo.coverUrl || "",
-          type: (itemInfo.type as MediaType) || "book",
-          year: itemInfo.year ? parseInt(itemInfo.year, 10) : undefined,
-          description: itemInfo.description,
-          pages: itemInfo.pages,
-          runtime: itemInfo.runtime,
-          seasons: itemInfo.seasons,
-          platform: itemInfo.platform,
-          language: itemInfo.language,
-          genre: itemInfo.genre,
-          releaseDate: itemInfo.releaseDate,
-          director: itemInfo.director,
-          cast: itemInfo.cast,
-          tagline: itemInfo.tagline,
-          numberOfEpisodes: itemInfo.numberOfEpisodes,
-          network: itemInfo.network,
-          status_tv: itemInfo.status_tv,
-          developer: itemInfo.developer,
-          publisher_game: itemInfo.publisher_game,
-          igdbRating: itemInfo.igdbRating,
-          publisher: itemInfo.publisher,
+          title: finalInfo.title || "",
+          subtitle: finalInfo.subtitle || "",
+          coverUrl: finalInfo.coverUrl || "",
+          type: (finalInfo.type as MediaType) || "book",
+          year: finalInfo.year ? parseInt(finalInfo.year, 10) : undefined,
+          description: finalInfo.description,
+          pages: finalInfo.pages,
+          runtime: finalInfo.runtime,
+          seasons: finalInfo.seasons,
+          platform: finalInfo.platform,
+          language: finalInfo.language,
+          genre: finalInfo.genre,
+          releaseDate: finalInfo.releaseDate,
+          director: finalInfo.director,
+          cast: finalInfo.cast,
+          tagline: finalInfo.tagline,
+          numberOfEpisodes: finalInfo.numberOfEpisodes,
+          network: finalInfo.network,
+          status_tv: finalInfo.status_tv,
+          developer: finalInfo.developer,
+          publisher_game: finalInfo.publisher_game,
+          igdbRating: finalInfo.igdbRating,
+          publisher: finalInfo.publisher,
         }}
       />
     </SafeAreaView>
@@ -362,5 +446,19 @@ const styles = StyleSheet.create({
   addBtnText: {
     fontFamily: Typography.fontFamily.primarySemiBold,
     fontSize: Typography.sizes.body,
+  },
+  genreRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+  },
+  genrePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+  },
+  genreText: {
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: Typography.sizes.bodySmall,
   },
 });
