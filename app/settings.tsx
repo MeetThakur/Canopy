@@ -52,14 +52,14 @@ export default function SettingsScreen() {
       const data = JSON.stringify({ items: state.items, order: state.order }, null, 2);
       
       const fileUri = FileSystem.cacheDirectory + 'canopy_backup.json';
-      await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
+      await FileSystem.writeAsStringAsync(fileUri, data, { encoding: 'utf8' });
       
       if (Platform.OS === 'android') {
         try {
           const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
           if (permissions.granted) {
             const fileUriSaf = await FileSystem.StorageAccessFramework.createFileAsync(permissions.directoryUri, 'canopy_backup', 'application/json');
-            await FileSystem.writeAsStringAsync(fileUriSaf, data, { encoding: FileSystem.EncodingType.UTF8 });
+            await FileSystem.writeAsStringAsync(fileUriSaf, data, { encoding: 'utf8' });
             Alert.alert("Success", "Library exported successfully via Storage Access Framework.");
             return;
           } else {
@@ -90,7 +90,7 @@ export default function SettingsScreen() {
       const result = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
       if (result.canceled) return;
       const fileUri = result.assets[0].uri;
-      const fileData = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
+      const fileData = await FileSystem.readAsStringAsync(fileUri, { encoding: 'utf8' });
       const parsed = JSON.parse(fileData);
       
       if (parsed && typeof parsed === 'object' && parsed.items) {
