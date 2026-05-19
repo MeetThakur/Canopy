@@ -46,6 +46,9 @@ export async function getMovieDetails(id: string): Promise<MediaSearchResult | n
       genre: m.Genre !== 'N/A' ? m.Genre.split(', ') : [],
       director: m.Director !== 'N/A' ? m.Director : '',
       cast: m.Actors !== 'N/A' ? m.Actors.split(', ') : [],
+      imdbRating: m.imdbRating !== 'N/A' ? m.imdbRating : undefined,
+      boxOffice: m.BoxOffice !== 'N/A' ? m.BoxOffice : undefined,
+      awards: m.Awards !== 'N/A' ? m.Awards : undefined,
     };
   } catch {
     return null;
@@ -91,6 +94,7 @@ export async function getTVDetails(id: string): Promise<MediaSearchResult | null
       genre: show.genres || [],
       network: show.network?.name || '',
       status_tv: show.status,
+      imdbRating: show.rating?.average ? String(show.rating.average) : undefined,
     };
   } catch {
     return null;

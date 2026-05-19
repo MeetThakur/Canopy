@@ -81,9 +81,12 @@ export default function LibraryScreen() {
   const itemsMap = useLibraryStore((s) => s.items);
   const removeItem = useLibraryStore((s) => s.removeItem);
 
-  const [activeCategory, setActiveCategory] = useState<"all" | MediaType>("all");
-  const [activeStatus, setActiveStatus] = useState<"all" | Status>("all");
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const activeCategory = useLibraryStore((s) => s.activeCategory);
+  const setActiveCategory = useLibraryStore((s) => s.setActiveCategory);
+  const activeStatus = useLibraryStore((s) => s.activeStatus);
+  const setActiveStatus = useLibraryStore((s) => s.setActiveStatus);
+  const viewMode = useLibraryStore((s) => s.viewMode);
+  const setViewMode = useLibraryStore((s) => s.setViewMode);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('newest');
@@ -127,7 +130,7 @@ export default function LibraryScreen() {
 
   const toggleView = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setViewMode((v) => (v === "list" ? "grid" : "list"));
+    setViewMode(viewMode === "list" ? "grid" : "list");
   };
 
   const cycleSortMode = () => {
@@ -273,7 +276,7 @@ export default function LibraryScreen() {
                 style={{ paddingHorizontal: Spacing.md }}
               />
             )}
-            estimatedItemSize={88}
+            estimatedItemSize={80}
             contentContainerStyle={{ paddingBottom: 100 }}
           />
         ) : (

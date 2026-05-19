@@ -35,6 +35,9 @@ export interface MediaItem {
   budget?: number;
   revenue?: number;
   tagline?: string;
+  imdbRating?: string;
+  boxOffice?: string;
+  awards?: string;
 
   // TV-specific
   seasons?: number;

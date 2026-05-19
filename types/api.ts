@@ -23,6 +23,9 @@ export interface MediaSearchResult {
   cast?: string[];
   budget?: number;
   revenue?: number;
+  imdbRating?: string;
+  boxOffice?: string;
+  awards?: string;
   // TV-specific
   seasons?: number;
   numberOfEpisodes?: number;

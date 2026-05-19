@@ -267,6 +267,36 @@ export default function MediaPreviewScreen() {
                 </Text>
               </View>
             ) : null}
+            {finalInfo.imdbRating ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  IMDb Rating
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
+                  {finalInfo.imdbRating} / 10
+                </Text>
+              </View>
+            ) : null}
+            {finalInfo.boxOffice ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Box Office
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
+                  {finalInfo.boxOffice}
+                </Text>
+              </View>
+            ) : null}
+            {finalInfo.awards ? (
+              <View style={styles.infoBox}>
+                <Text style={[styles.infoLabel, { color: theme.textTertiary }]}>
+                  Awards
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.textPrimary }]}>
+                  {finalInfo.awards}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
         )}
@@ -317,6 +347,9 @@ export default function MediaPreviewScreen() {
           developer: finalInfo.developer,
           publisher_game: finalInfo.publisher_game,
           igdbRating: finalInfo.igdbRating,
+          imdbRating: finalInfo.imdbRating,
+          boxOffice: finalInfo.boxOffice,
+          awards: finalInfo.awards,
           publisher: finalInfo.publisher,
         }}
       />

@@ -13,6 +13,12 @@ interface LibraryState {
   getItems: () => MediaItem[];
   getItemById: (id: string) => MediaItem | undefined;
   importData: (items: Record<string, MediaItem>, order: string[]) => void;
+  viewMode: "list" | "grid";
+  activeCategory: "all" | MediaType;
+  activeStatus: "all" | Status;
+  setViewMode: (mode: "list" | "grid") => void;
+  setActiveCategory: (category: "all" | MediaType) => void;
+  setActiveStatus: (status: "all" | Status) => void;
 }
 
 export const useLibraryStore = create<LibraryState>()(
@@ -20,6 +26,12 @@ export const useLibraryStore = create<LibraryState>()(
     (set, get) => ({
       items: {},
       order: [],
+      viewMode: "list",
+      activeCategory: "all",
+      activeStatus: "all",
+      setViewMode: (mode) => set({ viewMode: mode }),
+      setActiveCategory: (category) => set({ activeCategory: category }),
+      setActiveStatus: (status) => set({ activeStatus: status }),
       addItem: (item) =>
         set((state) => ({
           items: { ...state.items, [item.id]: item },
@@ -64,7 +76,18 @@ export const useLibraryStore = create<LibraryState>()(
         return [...orderedItems, ...remainingItems];
       },
       getItemById: (id) => get().items[id],
-      importData: (items, order) => set({ items, order }),
+      importData: (items, order) => {
+        // Parse dates back to Date objects on import
+        const parsedItems = { ...items };
+        for (const key in parsedItems) {
+          const item = parsedItems[key];
+          if (item.createdAt) item.createdAt = new Date(item.createdAt);
+          if (item.updatedAt) item.updatedAt = new Date(item.updatedAt);
+          if (item.startDate) item.startDate = new Date(item.startDate);
+          if (item.endDate) item.endDate = new Date(item.endDate);
+        }
+        set({ items: parsedItems, order });
+      },
     }),
     {
       name: "library-storage",

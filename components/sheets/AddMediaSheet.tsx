@@ -81,6 +81,9 @@ interface RichPrefill extends Partial<FormData> {
   tagline?: string;
   budget?: number;
   revenue?: number;
+  imdbRating?: string;
+  boxOffice?: string;
+  awards?: string;
   numberOfEpisodes?: number;
   network?: string;
   status_tv?: string;
@@ -220,6 +223,9 @@ export function AddMediaSheet({
         tagline: prefill?.tagline,
         budget: prefill?.budget,
         revenue: prefill?.revenue,
+        imdbRating: prefill?.imdbRating,
+        boxOffice: prefill?.boxOffice,
+        awards: prefill?.awards,
         // TV-specific
         numberOfEpisodes: prefill?.numberOfEpisodes,
         network: prefill?.network,

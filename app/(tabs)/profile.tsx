@@ -82,7 +82,7 @@ export default function ProfileScreen() {
         {/* ── Hero card ──────────────────── */}
         <View style={[styles.heroCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={[styles.avatar, { backgroundColor: theme.accentBooks + '20' }]}>
-            <Text style={[styles.avatarLetter, { color: theme.accentBooks }]}>K</Text>
+            <Text style={[styles.avatarLetter, { color: theme.accentBooks }]}>C</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.heroCount, { color: theme.textPrimary }]}>{stats.totalItems}</Text>
@@ -132,20 +132,6 @@ export default function ProfileScreen() {
           })}
         </View>
 
-        {/* ── Insights ───────────────────── */}
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>Insights</Text>
-        <View style={styles.insightsRow}>
-          <View style={[styles.insightCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <TrendingUp size={20} color={theme.accentBooks} />
-            <Text style={[styles.insightVal, { color: theme.textPrimary }]} numberOfLines={1}>{topGenre}</Text>
-            <Text style={[styles.insightLabel, { color: theme.textTertiary }]}>Top Genre</Text>
-          </View>
-          <View style={[styles.insightCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Zap size={20} color={theme.accentMovies} />
-            <Text style={[styles.insightVal, { color: theme.textPrimary }]}>{topMonth}</Text>
-            <Text style={[styles.insightLabel, { color: theme.textTertiary }]}>Most Active</Text>
-          </View>
-        </View>
 
         {/* ── Achievements ───────────────── */}
         <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>Achievements</Text>

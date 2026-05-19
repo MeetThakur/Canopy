@@ -41,11 +41,11 @@ export function Button({
   const getTextColor = () => {
     if (disabled) return theme.textTertiary;
     switch (variant) {
-      case 'primary': return '#FFFFFF';
+      case 'primary': return isDark ? '#0F1115' : '#FFFFFF';
       case 'secondary': return theme.textPrimary;
       case 'outline': return theme.textPrimary;
       case 'destructive': return '#FFFFFF';
-      default: return '#FFFFFF';
+      default: return isDark ? '#0F1115' : '#FFFFFF';
     }
   };
 

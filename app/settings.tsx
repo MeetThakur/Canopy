@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Sun, Moon, Monitor, Download, Trash2, Info, Upload } from 'lucide-react-native';
@@ -49,16 +49,39 @@ export default function SettingsScreen() {
   const handleExport = async () => {
     try {
       const state = useLibraryStore.getState();
-      const data = JSON.stringify({ items: state.items, order: state.order });
-      const fileUri = FileSystem.documentDirectory + 'canopy_backup.json';
+      const data = JSON.stringify({ items: state.items, order: state.order }, null, 2);
+      
+      const fileUri = FileSystem.cacheDirectory + 'canopy_backup.json';
       await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
+      
+      if (Platform.OS === 'android') {
+        try {
+          const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+          if (permissions.granted) {
+            const fileUriSaf = await FileSystem.StorageAccessFramework.createFileAsync(permissions.directoryUri, 'canopy_backup', 'application/json');
+            await FileSystem.writeAsStringAsync(fileUriSaf, data, { encoding: FileSystem.EncodingType.UTF8 });
+            Alert.alert("Success", "Library exported successfully via Storage Access Framework.");
+            return;
+          } else {
+            console.warn("StorageAccessFramework permission denied, falling back to share dialog.");
+          }
+        } catch (safError: any) {
+          console.warn("SAF export failed, falling back to Sharing API:", safError);
+        }
+      }
+      
+      // Fallback or iOS default
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, { UTI: 'public.json', mimeType: 'application/json' });
+        await Sharing.shareAsync(fileUri, { 
+          UTI: 'public.json', 
+          mimeType: 'application/json',
+          dialogTitle: 'Export Canopy Backup'
+        });
       } else {
         Alert.alert("Error", "Sharing is not available on this device.");
       }
-    } catch (e) {
-      Alert.alert("Export Failed", "Could not export your library data.");
+    } catch (e: any) {
+      Alert.alert("Export Failed", `Could not export your library data: ${e?.message || e}`);
     }
   };
 
@@ -77,8 +100,8 @@ export default function SettingsScreen() {
       } else {
         Alert.alert("Invalid File", "The selected file does not contain valid Canopy backup data.");
       }
-    } catch (e) {
-      Alert.alert("Import Failed", "Could not read the backup file.");
+    } catch (e: any) {
+      Alert.alert("Import Failed", `Could not read the backup file: ${e?.message || e}`);
     }
   };
 

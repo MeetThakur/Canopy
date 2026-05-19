@@ -251,6 +251,9 @@ export default function MediaDetailScreen() {
           <View style={[styles.section, { gap: 12 }]}>
             {item.year && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Released: <Text style={{ color: theme.textPrimary }}>{item.year}</Text></Text>}
             {item.genre && item.genre.length > 0 && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Genre: <Text style={{ color: theme.textPrimary }}>{item.genre.join(', ')}</Text></Text>}
+            {item.imdbRating && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Rating: <Text style={{ color: theme.textPrimary }}>{item.imdbRating} / 10</Text></Text>}
+            {item.boxOffice && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Box Office: <Text style={{ color: theme.textPrimary }}>{item.boxOffice}</Text></Text>}
+            {item.awards && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Awards: <Text style={{ color: theme.textPrimary }}>{item.awards}</Text></Text>}
             {item.createdAt && <Text style={[styles.metaText, { color: theme.textTertiary }]}>Added to Library: <Text style={{ color: theme.textPrimary }}>{format(new Date(item.createdAt), "MMM d, yyyy")}</Text></Text>}
           </View>
 

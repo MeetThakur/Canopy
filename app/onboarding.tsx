@@ -22,9 +22,9 @@ function Slide1({ theme }: { theme: typeof Colors.dark }) {
   return (
     <View style={styles.slide}>
       <View style={[styles.brandMark, { borderColor: theme.accent + '30' }]}>
-        <Text style={[styles.brandLetter, { color: theme.accent }]}>K</Text>
+        <Text style={[styles.brandLetter, { color: theme.accent }]}>C</Text>
       </View>
-      <Text style={[styles.slideDisplay, { color: theme.textPrimary }]}>Kanopi</Text>
+      <Text style={[styles.slideDisplay, { color: theme.textPrimary }]}>Canopy</Text>
       <View style={[styles.divider, { backgroundColor: theme.accent }]} />
       <Text style={[styles.slideDesc, { color: theme.textSecondary }]}>
         Track the books you read, the films you watch, the shows you follow, and the games you play.
@@ -59,7 +59,7 @@ function Slide2({ theme }: { theme: typeof Colors.dark }) {
   );
 }
 
-function Slide3({ theme, onStart }: { theme: typeof Colors.dark; onStart: () => void }) {
+function Slide3({ theme, onStart, isDark }: { theme: typeof Colors.dark; onStart: () => void; isDark: boolean }) {
   const { themeMode, setThemeMode } = useThemeStore();
   const options: { label: string; value: 'light' | 'dark' | 'system'; Icon: typeof Sun }[] = [
     { label: 'Light', value: 'light', Icon: Sun },
@@ -93,8 +93,8 @@ function Slide3({ theme, onStart }: { theme: typeof Colors.dark; onStart: () => 
         })}
       </View>
       <TouchableOpacity style={[styles.startBtn, { backgroundColor: theme.accent }]} onPress={onStart} accessibilityLabel="Get started">
-        <Text style={styles.startBtnText}>Get Started</Text>
-        <ArrowRight size={18} color="#FFF" />
+        <Text style={[styles.startBtnText, { color: isDark ? '#0F1115' : '#FFF' }]}>Get Started</Text>
+        <ArrowRight size={18} color={isDark ? '#0F1115' : '#FFF'} />
       </TouchableOpacity>
     </View>
   );
@@ -130,7 +130,7 @@ export default function OnboardingScreen() {
     <View style={{ width }}>
       {index === 0 && <Slide1 theme={theme} />}
       {index === 1 && <Slide2 theme={theme} />}
-      {index === 2 && <Slide3 theme={theme} onStart={handleStart} />}
+      {index === 2 && <Slide3 theme={theme} onStart={handleStart} isDark={isDark} />}
     </View>
   );
 

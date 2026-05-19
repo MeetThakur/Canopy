@@ -50,42 +50,90 @@ function MinimalGridCard({ item, onPress, style }: { item: MediaItem; onPress: (
   );
 }
 
-// ─── Modern Row Card ─────────────────────────────────────────────────────────
+const formatRelativeTime = (dateStr: string) => {
+  if (!dateStr) return '';
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 60) {
+    return `${Math.max(1, diffMins)}m ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  } else if (diffDays === 1) {
+    return 'Yesterday';
+  } else if (diffDays < 7) {
+    return `${diffDays}d ago`;
+  } else {
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+};
 
 function getStatusText(status: string) {
   if (status === 'completed') return 'Completed';
-  if (status === 'inprogress') return 'Currently Enjoying';
-  return 'Added to Planning';
+  if (status === 'inprogress') return 'In Progress';
+  return 'Want';
 }
 
-function MinimalRow({ item, onPress }: { item: MediaItem; onPress: () => void }) {
+function getStatusBgColor(status: string, theme: any) {
+  if (status === 'completed') return theme.success + '15'; // ~8% opacity
+  if (status === 'inprogress') return theme.accentBooks + '15';
+  return theme.textTertiary + '15';
+}
+
+function getStatusColor(status: string, theme: any) {
+  if (status === 'completed') return theme.success;
+  if (status === 'inprogress') return theme.accentBooks;
+  return theme.textSecondary;
+}
+
+function RecentsFeedCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
 
   return (
     <TouchableOpacity
       style={[
-        styles.rowCard,
-        { backgroundColor: theme.surface, shadowColor: '#000' }
+        styles.feedCard,
+        { backgroundColor: theme.surface, borderColor: theme.border }
       ]}
       onPress={onPress}
       accessibilityLabel={item.title}
       activeOpacity={0.8}
     >
-      <View style={[styles.coverWrap, { backgroundColor: theme.surface2 }]}>
+      <View style={[styles.feedCoverWrap, { backgroundColor: theme.surface2 }]}>
         <Image
           source={item.coverUrl ? { uri: item.coverUrl } : undefined}
-          style={[styles.cover, { borderRadius: BorderRadius.sm }]}
+          style={styles.feedCover}
           contentFit="cover"
+          transition={200}
         />
       </View>
-      <View style={styles.meta}>
-        <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
-          {item.title}
+      <View style={styles.feedContent}>
+        <View style={styles.feedHeaderRow}>
+          <Text style={[styles.feedTitle, { color: theme.textPrimary }]} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <Text style={[styles.feedTime, { color: theme.textTertiary }]}>
+            {formatRelativeTime(item.updatedAt)}
+          </Text>
+        </View>
+
+        <Text style={[styles.feedSubtitle, { color: theme.textSecondary }]} numberOfLines={1}>
+          {item.subtitle || item.type.toUpperCase()}
         </Text>
-        <Text style={[styles.actionText, { color: theme.accentBooks }]} numberOfLines={1}>
-          • {getStatusText(item.status)}
-        </Text>
+
+        <View style={styles.feedFooter}>
+          <View style={[styles.feedStatusBadge, { backgroundColor: getStatusBgColor(item.status, theme) }]}>
+            <Text style={[styles.feedStatusText, { color: getStatusColor(item.status, theme) }]}>
+              {getStatusText(item.status)}
+            </Text>
+          </View>
+          {item.rating > 0 && <StarRating rating={item.rating} size={11} />}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -129,7 +177,7 @@ export default function HomeScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Text style={[styles.logo, { color: theme.textPrimary }]}>kanopi.</Text>
+          <Text style={[styles.logo, { color: theme.textPrimary }]}>canopy.</Text>
           <TouchableOpacity
             style={[styles.addBtn, { backgroundColor: theme.surface2 }]}
             onPress={() => setSheetVisible(true)}
@@ -178,9 +226,9 @@ export default function HomeScreen() {
         {recentlyAdded.length > 0 && (
           <View style={styles.listSection}>
             <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Recently Updated</Text>
-            <View style={styles.listContainer}>
+            <View style={[styles.listContainer, { gap: 0 }]}>
               {recentlyAdded.map((item) => (
-                <MinimalRow
+                <RecentsFeedCard
                   key={item.id}
                   item={item}
                   onPress={() => router.push(`/media/${item.id}`)}
@@ -279,6 +327,70 @@ const styles = StyleSheet.create({
   actionText: {
     fontFamily: Typography.fontFamily.primaryMedium,
     fontSize: Typography.sizes.caption,
+  },
+
+  feedCard: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  feedCoverWrap: {
+    width: 48,
+    height: 72,
+    borderRadius: BorderRadius.sm,
+    overflow: 'hidden',
+  },
+  feedCover: {
+    width: '100%',
+    height: '100%',
+  },
+  feedContent: {
+    flex: 1,
+    height: 72,
+    justifyContent: 'space-between',
+  },
+  feedHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  feedCategory: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: 9,
+    letterSpacing: 1,
+  },
+  feedTime: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: 10,
+  },
+  feedTitle: {
+    flex: 1,
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: 14,
+  },
+  feedSubtitle: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: 11,
+  },
+  feedFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  feedStatusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  feedStatusText: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: 8,
   },
 
   emptyCard: {
