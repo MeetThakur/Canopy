@@ -1,6 +1,6 @@
 import { MediaSearchResult } from '../types/api';
 
-const OMDB_API_KEY = 'thewdb';
+const OMDB_API_KEY = process.env.EXPO_PUBLIC_OMDB_API_KEY ?? '';
 const OMDB_BASE = 'https://www.omdbapi.com';
 const TVMAZE_BASE = 'https://api.tvmaze.com';
 
