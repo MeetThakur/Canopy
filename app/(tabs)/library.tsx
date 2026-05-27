@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
+const TypedFlashList = FlashList as any;
 import { LayoutGrid, List, Plus, Search, ArrowDownAZ } from "lucide-react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -265,10 +266,10 @@ export default function LibraryScreen() {
             onAction={() => searchQuery ? setSearchQuery('') : setSheetVisible(true)}
           />
         ) : viewMode === "list" ? (
-          <FlashList
+          <TypedFlashList
             data={filteredAndSorted}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
+            keyExtractor={(item: any) => item.id}
+            renderItem={({ item }: any) => (
               <MediaRow
                 item={item}
                 onPress={() => router.push(`/media/${item.id}`)}
@@ -280,11 +281,11 @@ export default function LibraryScreen() {
             contentContainerStyle={{ paddingBottom: 100 }}
           />
         ) : (
-          <FlashList
+          <TypedFlashList
             data={filteredAndSorted}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: any) => item.id}
             numColumns={3}
-            renderItem={({ item }) => (
+            renderItem={({ item }: any) => (
               <View style={{ flex: 1, padding: Spacing.xs }}>
                 <GridCard 
                   item={item} 

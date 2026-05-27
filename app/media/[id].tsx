@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Modal, Pressable, Animated, LayoutAnimation, Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import {
-  ChevronLeft, Trash2, Plus, Minus
+  ChevronLeft, Trash2, Plus, Minus, Share2, CheckCircle2, Bookmark
 } from "lucide-react-native";
 import { format } from "date-fns";
 import { Colors } from "../../constants/colors";
@@ -18,6 +18,8 @@ import { StarRating } from "../../components/ui/StarRating";
 import { AddMediaSheet } from "../../components/sheets/AddMediaSheet";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Sharing from "expo-sharing";
+import { captureRef } from "react-native-view-shot";
 
 const STATUS_OPTIONS = [
   { label: "Want", value: "want" as const },
@@ -31,38 +33,97 @@ function ProgressTracker({
   label, 
   current, 
   total, 
+  color,
+  onChangeValue,
   onIncrement, 
   onDecrement 
 }: { 
   label: string; 
   current: number; 
   total?: number; 
+  color: string;
+  onChangeValue: (val: number) => void;
   onIncrement: () => void; 
   onDecrement: () => void;
 }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(String(current));
+
+  useEffect(() => {
+    setEditText(String(current));
+  }, [current]);
+
+  const handleSave = () => {
+    setIsEditing(false);
+    const parsed = parseInt(editText, 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      onChangeValue(total ? Math.min(total, parsed) : parsed);
+    } else {
+      setEditText(String(current));
+    }
+  };
+
+  const pct = total ? Math.min(100, Math.max(0, Math.round((current / total) * 100))) : 0;
 
   return (
-    <View style={styles.progressContainer}>
-      <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>{label}</Text>
-      <View style={styles.progressControls}>
+    <View style={[styles.progressCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+      <View style={styles.progressHeaderRow}>
+        <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>{label}</Text>
+        {total ? (
+          <Text style={[styles.progressPercent, { color }]}>{pct}% Complete</Text>
+        ) : null}
+      </View>
+
+      <View style={styles.progressControlsRow}>
         <TouchableOpacity 
-          style={[styles.progressBtn, { borderColor: theme.border }]} 
+          style={[styles.progressBtn, { borderColor: theme.border, backgroundColor: theme.surface2 }]} 
           onPress={onDecrement}
         >
           <Minus size={16} color={theme.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.progressValue, { color: theme.textPrimary }]}>
-          {current} {total ? <Text style={{ color: theme.textTertiary }}>/ {total}</Text> : null}
-        </Text>
+
+        {isEditing ? (
+          <TextInput
+            style={[styles.progressInput, { color: theme.textPrimary, borderBottomColor: color }]}
+            value={editText}
+            onChangeText={setEditText}
+            keyboardType="numeric"
+            autoFocus
+            onBlur={handleSave}
+            onSubmitEditing={handleSave}
+          />
+        ) : (
+          <TouchableOpacity 
+            onPress={() => setIsEditing(true)} 
+            style={styles.progressValueWrapper}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.progressValue, { color: theme.textPrimary }]}>
+              {current}
+            </Text>
+            {total ? (
+              <Text style={[styles.progressTotal, { color: theme.textTertiary }]}>
+                / {total}
+              </Text>
+            ) : null}
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity 
-          style={[styles.progressBtn, { borderColor: theme.border }]} 
+          style={[styles.progressBtn, { borderColor: theme.border, backgroundColor: theme.surface2 }]} 
           onPress={onIncrement}
         >
           <Plus size={16} color={theme.textPrimary} />
         </TouchableOpacity>
       </View>
+
+      {total ? (
+        <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
+          <View style={[styles.progressFill, { backgroundColor: color, width: `${pct}%` }]} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -77,10 +138,33 @@ export default function MediaDetailScreen() {
   const item = useLibraryStore((s) => s.items[id as string]);
   const updateItem = useLibraryStore((s) => s.updateItem);
   const removeItem = useLibraryStore((s) => s.removeItem);
+  
   const [editVisible, setEditVisible] = useState(false);
-
+  const [shareVisible, setShareVisible] = useState(false);
+  
   const [optimisticStatus, setOptimisticStatus] = useState(item?.status);
   const [optimisticRating, setOptimisticRating] = useState(item?.rating ?? 0);
+
+  const cardRef = useRef<View>(null);
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(15)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   useEffect(() => { 
     if (item) { 
@@ -105,7 +189,11 @@ export default function MediaDetailScreen() {
   const handleDelete = () => {
     Alert.alert("Remove Item", `Remove "${item.title}" from your library?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => { removeItem(id as string); router.back(); } },
+      { text: "Remove", style: "destructive", onPress: () => { 
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        removeItem(id as string); 
+        router.back(); 
+      } },
     ]);
   };
 
@@ -118,6 +206,7 @@ export default function MediaDetailScreen() {
 
   const handleStatusChange = (status: "want" | "inprogress" | "completed") => {
     if (optimisticStatus === status) return;
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setOptimisticStatus(status);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     requestAnimationFrame(() => updateItem(id as string, { status }));
@@ -125,9 +214,63 @@ export default function MediaDetailScreen() {
 
   const handleProgressUpdate = (field: 'pagesRead' | 'episodesWatched' | 'hoursPlayed', increment: boolean) => {
     const currentVal = (item as any)[field] || 0;
-    const newVal = Math.max(0, increment ? currentVal + 1 : currentVal - 1);
+    const totalVal = field === 'pagesRead' ? item.pages : field === 'episodesWatched' ? item.numberOfEpisodes : undefined;
+    let newVal = increment ? currentVal + 1 : currentVal - 1;
+    newVal = Math.max(0, newVal);
+    if (totalVal !== undefined) {
+      newVal = Math.min(totalVal, newVal);
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     updateItem(id as string, { [field]: newVal });
+  };
+
+  // Card details calculations
+  const getCardGradient = () => {
+    if (item.type === "book") return ["#1E293B", "#0F172A"] as const;
+    if (item.type === "tv") return ["#31102F", "#0F172A"] as const;
+    if (item.type === "game") return ["#064E3B", "#0F172A"] as const;
+    return ["#3B0764", "#0F172A"] as const;
+  };
+
+  const getCategoryLabel = () => {
+    if (item.status === "completed") {
+      if (item.type === "book") return "FINISHED READING";
+      if (item.type === "tv") return "FINISHED WATCHING";
+      if (item.type === "game") return "COMPLETED";
+      return "WATCHED";
+    }
+    if (item.status === "inprogress") {
+      if (item.type === "book") return "NOW READING";
+      if (item.type === "tv") return "NOW WATCHING";
+      if (item.type === "game") return "NOW PLAYING";
+      return "NOW WATCHING";
+    }
+    return "WANT TO " + (item.type === "book" ? "READ" : item.type === "game" ? "PLAY" : "WATCH");
+  };
+
+  const getCategoryColor = () => {
+    if (item.type === "book") return theme.accentBooks;
+    if (item.type === "tv") return theme.accentTV;
+    if (item.type === "game") return theme.accentGames;
+    return theme.accentMovies;
+  };
+
+  const handleShare = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const uri = await captureRef(cardRef, {
+        format: "png",
+        quality: 0.9,
+      });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Alert.alert("Sharing Not Available", "Sharing is not supported on this device.");
+      }
+    } catch (error) {
+      console.error("View shot capture error:", error);
+      Alert.alert("Sharing Failed", "Failed to generate shareable card.");
+    }
   };
 
   return (
@@ -155,14 +298,20 @@ export default function MediaDetailScreen() {
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back">
               <ChevronLeft size={24} color="#FFF" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setEditVisible(true)} style={styles.editBtn} accessibilityLabel="Edit item">
-              <Text style={styles.editBtnText}>Edit</Text>
-            </TouchableOpacity>
+            
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <TouchableOpacity onPress={() => setShareVisible(true)} style={styles.backBtn} accessibilityLabel="Share card">
+                <Share2 size={18} color="#FFF" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setEditVisible(true)} style={styles.editBtn} accessibilityLabel="Edit item">
+                <Text style={styles.editBtnText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
           </SafeAreaView>
         </View>
 
         {/* Content Area */}
-        <View style={styles.contentArea}>
+        <Animated.View style={[styles.contentArea, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           
           <Text style={[styles.typeText, { color: theme.textSecondary }]}>
             {item.type.toUpperCase()}
@@ -208,12 +357,14 @@ export default function MediaDetailScreen() {
 
           {/* Progress Tracking */}
           {item.status === 'inprogress' && (
-            <View style={[styles.section, { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 24 }]}>
+            <View style={[styles.section, { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 20 }]}>
               {item.type === 'book' && (
                 <ProgressTracker 
                   label="Pages Read" 
                   current={item.pagesRead || 0} 
                   total={item.pages}
+                  color={theme.accentBooks}
+                  onChangeValue={(val) => updateItem(id as string, { pagesRead: val })}
                   onIncrement={() => handleProgressUpdate('pagesRead', true)}
                   onDecrement={() => handleProgressUpdate('pagesRead', false)}
                 />
@@ -223,6 +374,8 @@ export default function MediaDetailScreen() {
                   label="Episodes Watched" 
                   current={item.episodesWatched || 0} 
                   total={item.numberOfEpisodes}
+                  color={theme.accentTV}
+                  onChangeValue={(val) => updateItem(id as string, { episodesWatched: val })}
                   onIncrement={() => handleProgressUpdate('episodesWatched', true)}
                   onDecrement={() => handleProgressUpdate('episodesWatched', false)}
                 />
@@ -231,6 +384,8 @@ export default function MediaDetailScreen() {
                 <ProgressTracker 
                   label="Hours Played" 
                   current={item.hoursPlayed || 0} 
+                  color={theme.accentGames}
+                  onChangeValue={(val) => updateItem(id as string, { hoursPlayed: val })}
                   onIncrement={() => handleProgressUpdate('hoursPlayed', true)}
                   onDecrement={() => handleProgressUpdate('hoursPlayed', false)}
                 />
@@ -273,7 +428,7 @@ export default function MediaDetailScreen() {
             <Text style={[styles.deleteBtnText, { color: theme.destructive }]}>Remove from Collection</Text>
           </TouchableOpacity>
           
-        </View>
+        </Animated.View>
       </ScrollView>
 
       <AddMediaSheet
@@ -281,6 +436,138 @@ export default function MediaDetailScreen() {
         onClose={() => setEditVisible(false)}
         editId={id as string}
       />
+
+      {/* ─── Share Card Preview Modal ─── */}
+      <Modal
+        visible={shareVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShareVisible(false)}
+      >
+        <View style={styles.shareModalBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShareVisible(false)} />
+          <View style={[styles.shareModalContent, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.shareModalTitle, { color: theme.textPrimary }]}>Share Your Card</Text>
+            
+            {/* Card Preview Container */}
+            <View style={styles.cardPreviewContainer}>
+              <View 
+                ref={cardRef} 
+                collapsable={false}
+                style={styles.shareCardContainer}
+              >
+                <LinearGradient
+                  colors={getCardGradient()}
+                  style={styles.shareCardGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.shareCardHeader}>
+                    <Text style={styles.shareCardBrand}>🌿 canopy.</Text>
+                  </View>
+
+                  <View style={styles.shareCardBody}>
+                    {item.coverUrl ? (
+                      <Image 
+                        source={{ uri: item.coverUrl }} 
+                        style={styles.shareCardCover} 
+                        contentFit="cover" 
+                      />
+                    ) : (
+                      <View style={[styles.shareCardCover, { backgroundColor: '#374151', justifyContent: 'center', alignItems: 'center' }]}>
+                        <Text style={{ color: '#9CA3AF', fontSize: 12 }}>No Cover</Text>
+                      </View>
+                    )}
+
+                    <View style={styles.shareCardMeta}>
+                      <Text style={[styles.shareCardStatusLabel, { color: getCategoryColor() }]}>
+                        {getCategoryLabel()}
+                      </Text>
+                      <Text style={styles.shareCardTitle} numberOfLines={2}>
+                        {item.title}
+                      </Text>
+                      {item.subtitle ? (
+                        <Text style={styles.shareCardSubtitle} numberOfLines={1}>
+                          {item.subtitle}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  <View style={styles.shareCardProgressSection}>
+                    {item.status === 'inprogress' && (
+                      <>
+                        <View style={styles.shareCardProgressInfo}>
+                          <Text style={styles.shareCardProgressText}>
+                            {item.type === 'book' && `${item.pagesRead || 0} of ${item.pages || '?'} pages`}
+                            {item.type === 'tv' && `${item.episodesWatched || 0} of ${item.numberOfEpisodes || '?'} episodes`}
+                            {item.type === 'game' && `${item.hoursPlayed || 0} hours played`}
+                          </Text>
+                          {item.type !== 'game' && (item.pages || item.numberOfEpisodes) ? (
+                            <Text style={[styles.shareCardProgressPercent, { color: getCategoryColor() }]}>
+                              {Math.min(100, Math.round((((item.type === 'book' ? item.pagesRead : item.episodesWatched) || 0) / ((item.type === 'book' ? item.pages : item.numberOfEpisodes) || 1)) * 100))}%
+                            </Text>
+                          ) : null}
+                        </View>
+                        {item.type !== 'game' && (item.pages || item.numberOfEpisodes) ? (
+                          <View style={styles.shareCardProgressTrack}>
+                            <View style={[styles.shareCardProgressFill, { 
+                              backgroundColor: getCategoryColor(),
+                              width: `${Math.min(100, Math.round((((item.type === 'book' ? item.pagesRead : item.episodesWatched) || 0) / ((item.type === 'book' ? item.pages : item.numberOfEpisodes) || 1)) * 100))}%`
+                            }]} />
+                          </View>
+                        ) : null}
+                      </>
+                    )}
+
+                    {item.status === 'completed' && (
+                      <View style={styles.shareCardCompleted}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                          <CheckCircle2 size={16} color={theme.success} />
+                          <Text style={styles.shareCardCompletedText}>COMPLETED</Text>
+                        </View>
+                        {item.rating > 0 ? (
+                          <View style={{ flexDirection: 'row', gap: 4 }}>
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Text key={i} style={{ fontSize: 16, color: i < item.rating ? '#F59E0B' : '#4B5563' }}>
+                                ★
+                              </Text>
+                            ))}
+                          </View>
+                        ) : null}
+                      </View>
+                    )}
+
+                    {item.status === 'want' && (
+                      <View style={styles.shareCardCompleted}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Bookmark size={16} color={getCategoryColor()} />
+                          <Text style={styles.shareCardCompletedText}>ADDED TO WISHLIST</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </LinearGradient>
+              </View>
+            </View>
+
+            <View style={styles.shareModalActions}>
+              <TouchableOpacity
+                style={[styles.shareModalBtn, { backgroundColor: theme.textPrimary }]}
+                onPress={handleShare}
+              >
+                <Text style={[styles.shareModalBtnText, { color: theme.background }]}>Share Image</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.shareModalBtnCancel, { borderColor: theme.border }]}
+                onPress={() => setShareVisible(false)}
+              >
+                <Text style={[styles.shareModalBtnCancelText, { color: theme.textSecondary }]}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -358,24 +645,233 @@ const styles = StyleSheet.create({
   },
   deleteBtnText: { fontFamily: Typography.fontFamily.primaryMedium, fontSize: Typography.sizes.body },
 
-  // Progress Tracker
-  progressContainer: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  // Progress Tracker Custom Upgrade
+  progressCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.xs,
+  },
+  progressHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
   },
   progressLabel: {
-    fontFamily: Typography.fontFamily.primaryMedium,
-    fontSize: Typography.sizes.body,
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
-  progressControls: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
+  progressPercent: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: Typography.sizes.caption,
+  },
+  progressControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+    paddingVertical: Spacing.xs,
   },
   progressBtn: {
     width: 36, height: 36, borderRadius: 18,
-    borderWidth: 1, justifyContent: 'center', alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center', alignItems: 'center',
+  },
+  progressValueWrapper: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(128,128,128,0.2)',
+    paddingHorizontal: 8,
+    paddingBottom: 2,
+    minWidth: 60,
+    justifyContent: 'center',
   },
   progressValue: {
     fontFamily: Typography.fontFamily.primaryBold,
     fontSize: Typography.sizes.h2,
-    minWidth: 40, textAlign: 'center',
+    textAlign: 'center',
+  },
+  progressTotal: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.bodySmall,
+    marginLeft: 4,
+  },
+  progressInput: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: Typography.sizes.h2,
+    textAlign: 'center',
+    width: 85,
+    borderBottomWidth: 2,
+    paddingVertical: 0,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    width: '100%',
+    marginTop: Spacing.md,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+
+  // Share Card Preview Modal Styles
+  shareModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareModalContent: {
+    width: 350,
+    borderRadius: 24,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  shareModalTitle: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: 18,
+    marginBottom: Spacing.md,
+  },
+  cardPreviewContainer: {
+    width: 300,
+    height: 420,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  shareCardContainer: {
+    width: 300,
+    height: 420,
+  },
+  shareCardGradient: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'space-between',
+  },
+  shareCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+  },
+  shareCardBrand: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: 11,
+    color: '#FFF',
+    opacity: 0.6,
+    letterSpacing: 1.5,
+  },
+  shareCardBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  shareCardCover: {
+    width: 80,
+    height: 120,
+    borderRadius: 8,
+  },
+  shareCardMeta: {
+    flex: 1,
+    gap: 4,
+  },
+  shareCardStatusLabel: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: 8,
+    letterSpacing: 1.5,
+  },
+  shareCardTitle: {
+    fontFamily: Typography.fontFamily.heading,
+    fontSize: 20,
+    color: '#FFF',
+    lineHeight: 24,
+  },
+  shareCardSubtitle: {
+    fontFamily: Typography.fontFamily.primary,
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  shareCardProgressSection: {
+    width: '100%',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  shareCardProgressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  shareCardProgressText: {
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: 11,
+    color: '#E5E7EB',
+  },
+  shareCardProgressPercent: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: 11,
+  },
+  shareCardProgressTrack: {
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  shareCardProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  shareCardCompleted: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  shareCardCompletedText: {
+    fontFamily: Typography.fontFamily.primaryBold,
+    fontSize: 10,
+    color: '#FFF',
+    letterSpacing: 1,
+  },
+  shareModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  shareModalBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareModalBtnText: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
+  },
+  shareModalBtnCancel: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareModalBtnCancelText: {
+    fontFamily: Typography.fontFamily.primarySemiBold,
+    fontSize: Typography.sizes.bodySmall,
   },
 });

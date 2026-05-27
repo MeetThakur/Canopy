@@ -15,6 +15,7 @@ import { AddMediaSheet } from '../../components/sheets/AddMediaSheet';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useStatsStore } from '../../stores/statsStore';
 import { MediaItem } from '../../types/media';
+import { StarRating } from '../../components/ui/StarRating';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -50,7 +51,7 @@ function MinimalGridCard({ item, onPress, style }: { item: MediaItem; onPress: (
   );
 }
 
-const formatRelativeTime = (dateStr: string) => {
+const formatRelativeTime = (dateStr: string | Date) => {
   if (!dateStr) return '';
   const now = new Date();
   const date = new Date(dateStr);
@@ -90,6 +91,25 @@ function getStatusColor(status: string, theme: any) {
   return theme.textSecondary;
 }
 
+function getCompactProgress(item: MediaItem) {
+  if (item.type === "book") {
+    const read = item.pagesRead || 0;
+    const total = item.pages;
+    const pct = total ? ` (${Math.min(100, Math.round((read / total) * 100))}%)` : '';
+    return `${read}/${total || '?'} p${pct}`;
+  }
+  if (item.type === "tv") {
+    const watched = item.episodesWatched || 0;
+    const total = item.numberOfEpisodes;
+    const pct = total ? ` (${Math.min(100, Math.round((watched / total) * 100))}%)` : '';
+    return `${watched}/${total || '?'} ep${pct}`;
+  }
+  if (item.type === "game") {
+    return `${item.hoursPlayed || 0}h`;
+  }
+  return "";
+}
+
 function RecentsFeedCard({ item, onPress }: { item: MediaItem; onPress: () => void }) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
@@ -127,10 +147,17 @@ function RecentsFeedCard({ item, onPress }: { item: MediaItem; onPress: () => vo
         </Text>
 
         <View style={styles.feedFooter}>
-          <View style={[styles.feedStatusBadge, { backgroundColor: getStatusBgColor(item.status, theme) }]}>
-            <Text style={[styles.feedStatusText, { color: getStatusColor(item.status, theme) }]}>
-              {getStatusText(item.status)}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={[styles.feedStatusBadge, { backgroundColor: getStatusBgColor(item.status, theme) }]}>
+              <Text style={[styles.feedStatusText, { color: getStatusColor(item.status, theme) }]}>
+                {getStatusText(item.status)}
+              </Text>
+            </View>
+            {item.status === 'inprogress' && (
+              <Text style={[styles.feedProgressText, { color: theme.textSecondary }]}>
+                • {getCompactProgress(item)}
+              </Text>
+            )}
           </View>
           {item.rating > 0 && <StarRating rating={item.rating} size={11} />}
         </View>
@@ -391,6 +418,10 @@ const styles = StyleSheet.create({
   feedStatusText: {
     fontFamily: Typography.fontFamily.primarySemiBold,
     fontSize: 8,
+  },
+  feedProgressText: {
+    fontFamily: Typography.fontFamily.primaryMedium,
+    fontSize: 9,
   },
 
   emptyCard: {

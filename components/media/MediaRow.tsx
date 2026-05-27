@@ -23,6 +23,25 @@ interface MediaRowProps {
   style?: StyleProp<ViewStyle>;
 }
 
+function getProgressText(item: MediaItem) {
+  if (item.type === "book") {
+    const read = item.pagesRead || 0;
+    const total = item.pages;
+    const pct = total ? ` (${Math.min(100, Math.round((read / total) * 100))}%)` : '';
+    return `📖 ${read}/${total || '?'} p${pct}`;
+  }
+  if (item.type === "tv") {
+    const watched = item.episodesWatched || 0;
+    const total = item.numberOfEpisodes;
+    const pct = total ? ` (${Math.min(100, Math.round((watched / total) * 100))}%)` : '';
+    return `📺 ${watched}/${total || '?'} ep${pct}`;
+  }
+  if (item.type === "game") {
+    return `🎮 ${item.hoursPlayed || 0}h`;
+  }
+  return "";
+}
+
 export function MediaRow({ item, onPress, onLongPress, style }: MediaRowProps) {
   const { isDark } = useTheme();
   const theme = isDark ? Colors.dark : Colors.light;
@@ -57,7 +76,14 @@ export function MediaRow({ item, onPress, onLongPress, style }: MediaRowProps) {
           {item.subtitle}
         </Text>
         <View style={styles.bottomRow}>
-          <StarRating rating={item.rating} size={13} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <StarRating rating={item.rating} size={13} />
+            {item.status === "inprogress" && (
+              <Text style={[styles.progressIndicator, { color: theme.textSecondary }]}>
+                {getProgressText(item)}
+              </Text>
+            )}
+          </View>
           {item.year && (
             <Text style={[styles.year, { color: theme.textTertiary }]}>
               {item.year}
@@ -109,6 +135,10 @@ const styles = StyleSheet.create({
   },
   year: {
     fontFamily: Typography.fontFamily.primary,
+    fontSize: Typography.sizes.caption,
+  },
+  progressIndicator: {
+    fontFamily: Typography.fontFamily.primaryMedium,
     fontSize: Typography.sizes.caption,
   },
 });

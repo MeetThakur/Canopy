@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MediaItem } from "../types/media";
+import { MediaItem, MediaType, Status } from "../types/media";
 
 interface LibraryState {
   items: Record<string, MediaItem>;
